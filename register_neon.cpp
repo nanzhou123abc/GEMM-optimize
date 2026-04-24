@@ -20,8 +20,6 @@ constexpr int Nr = 8;
 //微内核改为4*8
 //修改pack B的写法保证一行 NR个，方便neon
 //pack B 的结构：B_pack[panel][kc][jr]     panel 的大小是 k_len * Nr
-// panel = jr / Nr，第几个 Nr-宽的 panel
-// jr = panel 内的列偏移
 //C使用8个寄存器。
 void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
    
