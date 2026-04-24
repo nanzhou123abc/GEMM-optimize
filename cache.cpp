@@ -24,6 +24,17 @@ void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, 
             MAT_C(i, j) = sum;
         }
 }
+
+void naive_loopreorder(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
+    for (int i = 0; i < M; i++) {
+	memset(C+i*ldc, 0, N*sizeof(float));	
+        for (int k = 0; k < K; k++)
+            for (int j = 0; j < N; j++) {
+                MAT_C(i,j) += MAT_A(i, k) * MAT_B(k, j);
+        }
+    }
+}
+
 void check(int M, int N, float *c_ref, int ldc_ref, float *c_opt, int ldc_opt) {
     float max_error = 0.0f;
     for (int i = 0; i < M; i++)
@@ -75,6 +86,7 @@ int main(int argc, char *argv[]) {
     float *A      = (float *)aligned_alloc(64, M * K  * sizeof(float));
     float *B      = (float *)aligned_alloc(64, K * N  * sizeof(float));
     float *C_naive  = (float *)aligned_alloc(64, M * N  * sizeof(float));
+    float *C_loopreorder    = (float *)aligned_alloc(64, M * N  * sizeof(float));
     float *C_opt    = (float *)aligned_alloc(64, M * N  * sizeof(float));
 
     std::srand(time(NULL));
@@ -82,10 +94,12 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < K * N; i++) B[i] = (float)std::rand() / RAND_MAX;
 
     // 性能基准测试
-    GemmTimer::bench("naive",     M, N, K, 20,  [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
-    GemmTimer::bench("cache",     M, N, K, 100,  [&](){ cache_block(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("naive",     	M, N, K, 20,  [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
+    GemmTimer::bench("loopreorder",     M, N, K, 20,  [&](){ naive_loopreorder(M, N, K, A, lda, B, ldb, C_loopreorder, ldc); });
+    GemmTimer::bench("cache",     	M, N, K, 100,  [&](){ cache_block(M, N, K, A, lda, B, ldb, C_opt, ldc); });
     
     // 正确性验证
+    check(M, N, C_naive, ldc, C_loopreorder, ldc);
     check(M, N, C_naive, ldc, C_opt, ldc);
 
     free(A); free(B); free(C_naive); free(C_opt);
