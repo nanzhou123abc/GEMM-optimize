@@ -66,7 +66,7 @@ void pack_B(int Kc, int Nc, float *B, int ldb, float *B_pack, int k0, int j0) {
     }
 }
 
-// 计算: 外积累加，和标量版本完全一样的数学
+
 //   标量: c_ij += a_i * b_j
 //   NEON: cv_i_lo += a_i_broadcast * bv_lo
 //         cv_i_hi += a_i_broadcast * bv_hi
