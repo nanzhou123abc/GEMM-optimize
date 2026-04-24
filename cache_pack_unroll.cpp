@@ -12,6 +12,7 @@
 const int Mc = 64;
 const int Nc = 128;
 const int Kc = 64;
+//在cache_pack的基础上，将内核的jc循环展开
 void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
    
     for (int i = 0; i < M; i++)

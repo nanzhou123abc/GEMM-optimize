@@ -43,7 +43,7 @@ void check(int M, int N, float *C_ref, int ldc_ref, float *C_opt, int ldc_opt) {
     printf("  最大误差: %.6f\n", max_error);
 }
 
-// 外层循环在调用处按 Mr 步进，这样编译器更容易内联
+// 外层循环在调用处按 Mr 步进
 
 static inline void pack_A(int Kc, const float *A, int lda, float *A_pack) {
     for (int kc = 0; kc < Kc; kc++) {
@@ -67,8 +67,8 @@ void pack_B(int Kc, int Nc, float *B, int ldb, float *B_pack, int k0, int j0) {
 }
 
 // 微内核 4×8: NEON + k方向×4展开
-//   未展开: 每次循环处理 1 个 k，load A/B → FMA → 下一次循环
-//   展开×4: 每次循环处理 4 个 k，一次性 load 4组 A/B → 4组 FMA
+//   未展开: 每次循环处理 1 个 k，load A/B → FMA  下一次循环
+//   展开×4: 每次循环处理 4 个 k，一次性 load 4组 A/B   4组 FMA
 //   减少循环开销 ：循环次数变为 1/4
 //    寄存器利用  32 个 NEON 寄存器
 //      8 个给 C 累加器，4组×(2个B + 4个A) = 24 个给 A/B
@@ -184,7 +184,7 @@ void register_neon_unroll_gemm(int M, int N, int K,
 
     memset(C, 0, M * ldc * sizeof(float));
 
-    // 循环顺序: k → i → j
+    
     
     for (int k = 0; k < K; k += Kc) {
         int k_len = std::min(Kc, K - k);
