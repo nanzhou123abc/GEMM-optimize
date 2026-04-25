@@ -12,6 +12,7 @@
 const int Mc = 64;
 const int Nc = 128;
 const int Kc = 64;
+const float GFLOPS = 102.8;
 //在cache_pack的基础上，将内核的jc循环展开
 void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
    
@@ -102,7 +103,6 @@ int main(int argc, char *argv[]) {
     int M = atoi(argv[1]);
     int N = atoi(argv[2]);
     int K = atoi(argv[3]);
-
     
     int lda = K, ldb = N, ldc = N;
 
@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < K * N; i++) B[i] = (float)rand() / RAND_MAX;
 
     // 性能基准测试
-    GemmTimer::bench("naive", M, N, K, 20,  [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
-    GemmTimer::bench("cache_pack_unroll", M, N, K, 100,  [&](){ cache_block_pack(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("naive", M, N, K, 20, GFLOPS, [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
+    GemmTimer::bench("cache_pack_unroll", M, N, K, 100, GFLOPS, [&](){ cache_block_pack(M, N, K, A, lda, B, ldb, C_opt, ldc); });
     
         // 正确性验证
     check(M, N, C_naive, ldc, C_opt, ldc);

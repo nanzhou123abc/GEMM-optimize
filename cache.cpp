@@ -13,7 +13,7 @@
 const int Mc = 128;
 const int Nc = 256;
 const int Kc = 128;
-
+const float GFLOPS = 102.8;
 //与ipj不同的是：切割了MNK三个维度。
 void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
     for (int i = 0; i < M; i++) {
@@ -99,9 +99,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < K * N; i++) B[i] = (float)std::rand() / RAND_MAX;
 
     // 性能基准测试
-    GemmTimer::bench("naive",     	M, N, K, 20,  [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
-    GemmTimer::bench("loopreorder",     M, N, K, 20,  [&](){ naive_loopreorder(M, N, K, A, lda, B, ldb, C_loopreorder, ldc); });
-    GemmTimer::bench("cache",     	M, N, K, 20,  [&](){ cache_block(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("naive",     	M, N, K, 20, GFLOPS, [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
+    GemmTimer::bench("loopreorder",     M, N, K, 20, GFLOPS, [&](){ naive_loopreorder(M, N, K, A, lda, B, ldb, C_loopreorder, ldc); });
+    GemmTimer::bench("cache",     	M, N, K, 20, GFLOPS, [&](){ cache_block(M, N, K, A, lda, B, ldb, C_opt, ldc); });
     
     // 正确性验证
     check(M, N, C_naive, ldc, C_loopreorder, ldc);

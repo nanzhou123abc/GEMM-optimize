@@ -10,7 +10,7 @@
 #define A(i,j) a[ (i)*lda + (j) ]
 #define B(i,j) b[ (i)*ldb + (j) ]
 #define C(i,j) c[ (i)*ldc + (j) ]
-
+const float GFLOPS = 102.8;
 //A: M*K   B: K*N    C: M*N 行主序
 //拿a的一个点刷b的一行，返回C
 void naive(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc) {
@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
 
     // 性能基准测试
 
-    GemmTimer::bench("naive",     m, n, k, 20,  [&](){ naive(m, n, k, a, lda, b, ldb, c_naive, ldc); });
-    GemmTimer::bench("ipj",     m, n, k, 20,  [&](){ ipj_gemm(m, n, k, a, lda, b, ldb, c_opt, ldc); });
+    GemmTimer::bench("naive",     m, n, k, 20, GFLOPS, [&](){ naive(m, n, k, a, lda, b, ldb, c_naive, ldc); });
+    GemmTimer::bench("ipj",     m, n, k, 20, GFLOPS, [&](){ ipj_gemm(m, n, k, a, lda, b, ldb, c_opt, ldc); });
     
 
     check(m, n, c_naive, ldc, c_opt, ldc);
