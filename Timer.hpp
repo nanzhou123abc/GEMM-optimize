@@ -21,7 +21,7 @@ public:
         double sec = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
         sec /= run_times;
         double gflops = (2.0 * m * n * k) / (sec * 1e9);
-        std::printf("Timer: %-16s %8.3f GFLOPS  (%.4f ms)   %8.3f \n", name, gflops, sec * 1e3, gflops / 41.6 * 100);
+        std::printf("Timer: %-16s %8.3f GFLOPS  (%.4f ms)   %8.3f \n", name, gflops, sec * 1e3, gflops / 102.8 * 100);
         return gflops;
     }
 };

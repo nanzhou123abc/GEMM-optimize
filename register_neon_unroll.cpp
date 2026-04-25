@@ -182,7 +182,6 @@ void register_neon_unroll_gemm(int M, int N, int K,
     float * __restrict__ A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float * __restrict__ B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
 
-    memset(C, 0, M * ldc * sizeof(float));
 
     
     
@@ -201,6 +200,12 @@ void register_neon_unroll_gemm(int M, int N, int K,
                 int j_len = std::min(Nc, N - j);
 
                 pack_B(k_len, j_len, B, ldb, B_pack, k, j);
+
+                if (k == 0) {
+                    for (int ic = i; ic < i + i_len; ic++)
+                        for (int jc = j; jc < j + j_len; jc++)
+                            MAT_C(ic, jc) = 0.0f;
+                }
 
                 //内核
                 for (int ir = 0; ir < i_len; ir += Mr) {

@@ -10,19 +10,20 @@
 #define MAT_A(i,j) A[ (i)*lda + (j) ]
 #define MAT_B(i,j) B[ (i)*ldb + (j) ]
 #define MAT_C(i,j) C[ (i)*ldc + (j) ]
-const int Mc = 64;
-const int Nc = 128;
-const int Kc = 64;
+const int Mc = 128;
+const int Nc = 256;
+const int Kc = 128;
 
 //与ipj不同的是：切割了MNK三个维度。
 void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
-    for (int i = 0; i < M; i++)
-        for (int j = 0; j < N; j++) {
-            float sum = 0.0f;
-            for (int k = 0; k < K; k++)
-                sum += MAT_A(i, k) * MAT_B(k, j);
-            MAT_C(i, j) = sum;
+    for (int i = 0; i < M; i++) {
+        memset(&MAT_C(i, 0), 0, N * sizeof(float));
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < N; j++) {
+                MAT_C(i, j) += MAT_A(i, k) * MAT_B(k, j);
+            }
         }
+    }
 }
 
 void naive_loopreorder(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
@@ -46,7 +47,7 @@ void check(int M, int N, float *c_ref, int ldc_ref, float *c_opt, int ldc_opt) {
 }
 void cache_block(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
     //cache block
-    memset(C, 0, M * ldc * sizeof(float));
+    // memset(C, 0, M * ldc * sizeof(float));
     for(int i = 0; i < M; i += Mc) {
         int i_end = std::min(i + Mc, M);
         for(int k = 0; k < K; k += Kc) {
@@ -54,7 +55,11 @@ void cache_block(int M, int N, int K, float *A, int lda, float *B, int ldb, floa
             for(int j = 0; j < N; j += Nc) {
                 int j_end = std::min(j + Nc, N);
             
-
+                if (k == 0) {
+                    for (int ic = i; ic < i_end; ic++)
+                        for (int jc = j; jc < j_end; jc++)
+                            MAT_C(ic, jc) = 0.0f;
+                }
                 //micro kernel
                 for(int ic = i; ic < i_end; ic++) {
                     for(int kc = k; kc < k_end; kc++) {
@@ -96,12 +101,12 @@ int main(int argc, char *argv[]) {
     // 性能基准测试
     GemmTimer::bench("naive",     	M, N, K, 20,  [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
     GemmTimer::bench("loopreorder",     M, N, K, 20,  [&](){ naive_loopreorder(M, N, K, A, lda, B, ldb, C_loopreorder, ldc); });
-    GemmTimer::bench("cache",     	M, N, K, 100,  [&](){ cache_block(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("cache",     	M, N, K, 20,  [&](){ cache_block(M, N, K, A, lda, B, ldb, C_opt, ldc); });
     
     // 正确性验证
     check(M, N, C_naive, ldc, C_loopreorder, ldc);
     check(M, N, C_naive, ldc, C_opt, ldc);
 
-    free(A); free(B); free(C_naive); free(C_opt);
+    free(A); free(B); free(C_naive); free(C_opt); free(C_loopreorder);
     return 0;
 }

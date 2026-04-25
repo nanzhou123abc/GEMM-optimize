@@ -134,6 +134,12 @@ void register_gemm(int M, int N, int K,
                 // Pack A: 当前 (i, k) 块
                 pack_A(i_len, k_len, A, lda, A_pack, i, k);
 
+                if (k == 0) {
+                    for (int ic = i; ic < i + i_len; ic++)
+                        for (int jc = j; jc < j + j_len; jc++)
+                            MAT_C(ic, jc) = 0.0f;
+                }
+
                 // 微内核调度: 把 Mc×Nc 块切成 Mr×Nr 的小块
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
@@ -141,7 +147,7 @@ void register_gemm(int M, int N, int K,
                             k_len,
                             &A_pack[ir * k_len],           // A_pack 列主序，每 MR 组
                             &B_pack[jr], j_len,    // B_pack 行主序
-                            &MAT_C(i + ir, j + jr),  ldc
+                            C[(i+ir) * ldc + (j+jr)], ldc
                         );
                     }
                 }

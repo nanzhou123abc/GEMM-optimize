@@ -35,6 +35,7 @@ void check(int m, int n, float *c_ref, int ldc_ref, float *c_opt, int ldc_opt) {
 void ipj_gemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc) {
    memset(c, 0, m * ldc * sizeof(float));
     for (int i = 0; i < m; i++) {
+        
         for (int p = 0; p < k; p++) {
             float a_val = A(i,p);
             for (int j = 0; j < n; j++) {

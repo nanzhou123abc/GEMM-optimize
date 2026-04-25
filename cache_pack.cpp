@@ -55,7 +55,6 @@ void cache_block_pack(int M, int N, int K, float *A, int lda, float *B, int ldb,
     float *B_pack = (float*)aligned_alloc(64, Kc * Nc * sizeof(float));
     float *A_pack = (float*)aligned_alloc(64, Mc * Kc * sizeof(float));
 
-   memset(C, 0, M * N * sizeof(float));
 
     for(int k = 0; k < K; k += Kc) {
         int k_end = std::min(k + Kc, K);
@@ -70,6 +69,12 @@ void cache_block_pack(int M, int N, int K, float *A, int lda, float *B, int ldb,
                 int i_len = std::min(Mc, M - i);
                 pack_A(i_len, k_len, A, lda, A_pack, i, k);
 
+                if (k == 0) {
+                    for (int ic = i; ic < i_end; ic++)
+                        for (int jc = j; jc < j_end; jc++)
+                            MAT_C(ic, jc) = 0.0f;
+                }
+
                 //内核
                 for(int ic = i; ic < i_end; ic++) {
                     for(int kc = k; kc < k_end; kc++) {
@@ -83,6 +88,7 @@ void cache_block_pack(int M, int N, int K, float *A, int lda, float *B, int ldb,
             }
         }
     }
+    free(A_pack); free(B_pack);
 }
 
 

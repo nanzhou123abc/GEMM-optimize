@@ -115,7 +115,7 @@ void register_neon_gemm(int M, int N, int K,
 {
     float * __restrict__ A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float * __restrict__ B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
-    memset(C, 0, M * ldc * sizeof(float));
+
 
     for (int k = 0; k < K; k += Kc) {
         int k_len = std::min(Kc, K - k);
@@ -129,6 +129,12 @@ void register_neon_gemm(int M, int N, int K,
                 int i_len = std::min(Mc, M - i);
 
                 pack_A(i_len, k_len, A, lda, A_pack, i, k);
+
+                if (k == 0) {
+                    for (int ic = i; ic < i + i_len; ic++)
+                        for (int jc = j; jc < j + j_len; jc++)
+                            MAT_C(ic, jc) = 0.0f;
+                }
 
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
