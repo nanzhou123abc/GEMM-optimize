@@ -7,33 +7,33 @@
 #include <arm_neon.h> 
 #include "Timer.hpp"
 
-#define A(i,j) a[ (i)*lda + (j) ]
-#define B(i,j) b[ (i)*ldb + (j) ]
-#define C(i,j) c[ (i)*ldc + (j) ]
+#define MAT_A(i,j) A[ (i)*lda + (j) ]
+#define MAT_B(i,j) B[ (i)*ldb + (j) ]
+#define MAT_C(i,j) C[ (i)*ldc + (j) ]
 const float GFLOPS = 102.8;
 //A: M*K   B: K*N    C: M*N 行主序
 //拿a的一个点刷b的一行，返回C
-void naive(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc) {
+void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
    
-    for (int i = 0; i < m; i++)
-        for (int j = 0; j < n; j++) {
+    for (int i = 0; i < M; i++)
+        for (int j = 0; j < N; j++) {
             float sum = 0.0f;
-            for (int p = 0; p < k; p++)
-                sum += A(i,p) * B(p,j);
-            C(i,j) = sum;
+            for (int k = 0; k < K; k++)
+                sum += MAT_A(i,k) * MAT_B(k,j);
+            MAT_C(i,j) = sum;
         }
 }
-void check(int m, int n, float *c_ref, int ldc_ref, float *c_opt, int ldc_opt) {
+void check(int M, int N, float *C_ref, int ldc_ref, float *C_opt, int ldc_opt) {
     float max_error = 0.0f;
-    for (int i = 0; i < m; i++)
-        for (int j = 0; j < n; j++) {
-            float err = fabsf(c_ref[i * ldc_ref + j] - c_opt[i * ldc_opt + j]);
+    for (int i = 0; i < M; i++)
+        for (int j = 0; j < N; j++) {
+            float err = fabsf(C_ref[i * ldc_ref + j] - C_opt[i * ldc_opt + j]);
             if (err > max_error) max_error = err;
         }
     printf("  最大误差: %.6f\n", max_error);
 }
-void ipj_gemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc) {
-   for (int i = 0; i < M; i++) {
+void ipj_gemm(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
+    for (int i = 0; i < M; i++) {
         memset(&MAT_C(i, 0), 0, N * sizeof(float));
         for (int k = 0; k < K; k++) {
             for (int j = 0; j < N; j++) {
@@ -45,33 +45,33 @@ void ipj_gemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        printf("用法: %s m n k\n", argv[0]);
+        printf("用法: %s M N K\n", argv[0]);
         return 1;
     }
 
-    int m = atoi(argv[1]);
-    int n = atoi(argv[2]);
-    int k = atoi(argv[3]);
+    int M = atoi(argv[1]);
+    int N = atoi(argv[2]);
+    int K = atoi(argv[3]);
 
     
-    int lda = k, ldb = n, ldc = n;
+    int lda = K, ldb = N, ldc = N;
 
-    float *a      = (float *)aligned_alloc(64, m * k  * sizeof(float));
-    float *b      = (float *)aligned_alloc(64, k * n  * sizeof(float));
-    float *c_naive  = (float *)aligned_alloc(64, m * n  * sizeof(float));
-    float *c_opt    = (float *)aligned_alloc(64, m * n  * sizeof(float));
+    float *A      = (float *)aligned_alloc(64, M * K  * sizeof(float));
+    float *B      = (float *)aligned_alloc(64, K * N  * sizeof(float));
+    float *C_naive  = (float *)aligned_alloc(64, M * N  * sizeof(float));
+    float *C_opt    = (float *)aligned_alloc(64, M * N  * sizeof(float));
 
-    std :: srand(time(NULL));
-    for (int i = 0; i < m * k; i++) a[i] = (float)std :: rand() / RAND_MAX;
-    for (int i = 0; i < k * n; i++) b[i] = (float)std :: rand() / RAND_MAX;
+    std::srand(time(NULL));
+    for (int i = 0; i < M * K; i++) A[i] = (float)std::rand() / RAND_MAX;
+    for (int i = 0; i < K * N; i++) B[i] = (float)std::rand() / RAND_MAX;
 
     // 性能基准测试
 
-    GemmTimer::bench("naive",     m, n, k, 20, GFLOPS, [&](){ naive(m, n, k, a, lda, b, ldb, c_naive, ldc); });
-    GemmTimer::bench("ipj",     m, n, k, 20, GFLOPS, [&](){ ipj_gemm(m, n, k, a, lda, b, ldb, c_opt, ldc); });
+    GemmTimer::bench("naive",     M, N, K, 20, GFLOPS, [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
+    GemmTimer::bench("ipj",     M, N, K, 20, GFLOPS, [&](){ ipj_gemm(M, N, K, A, lda, B, ldb, C_opt, ldc); });
     
 
-    check(m, n, c_naive, ldc, c_opt, ldc);
-    free(a); free(b); free(c_naive); free(c_opt);
+    check(M, N, C_naive, ldc, C_opt, ldc);
+    free(A); free(B); free(C_naive); free(C_opt);
     return 0;
 }

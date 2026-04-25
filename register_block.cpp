@@ -148,7 +148,7 @@ void register_gemm(int M, int N, int K,
                             k_len,
                             &A_pack[ir * k_len],           // A_pack 列主序，每 MR 组
                             &B_pack[jr], j_len,    // B_pack 行主序
-                            C[(i+ir) * ldc + (j+jr)], ldc
+                            &C[(i+ir) * ldc + (j+jr)], ldc
                         );
                     }
                 }
