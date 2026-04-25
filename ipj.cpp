@@ -33,14 +33,11 @@ void check(int m, int n, float *c_ref, int ldc_ref, float *c_opt, int ldc_opt) {
     printf("  最大误差: %.6f\n", max_error);
 }
 void ipj_gemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc) {
-   memset(c, 0, m * ldc * sizeof(float));
-    for (int i = 0; i < m; i++) {
-        
-        for (int p = 0; p < k; p++) {
-            float a_val = A(i,p);
-            for (int j = 0; j < n; j++) {
-                C(i,j) += a_val * B(p,j);
-               
+   for (int i = 0; i < M; i++) {
+        memset(&MAT_C(i, 0), 0, N * sizeof(float));
+        for (int k = 0; k < K; k++) {
+            for (int j = 0; j < N; j++) {
+                MAT_C(i, j) += MAT_A(i, k) * MAT_B(k, j);
             }
         }
     }

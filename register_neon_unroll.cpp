@@ -25,13 +25,13 @@ const float GFLOPS = 102.8;
 
 void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
 
-    for (int i = 0; i < M; i++)
-        for (int j = 0; j < N; j++) {
-            float sum = 0.0f;
-            for (int k = 0; k < K; k++)
-                sum += MAT_A(i, k) * MAT_B(k, j);
-            MAT_C(i, j) = sum;
+    for (int i = 0; i < M; i++) {
+	memset(C+i*ldc, 0, N*sizeof(float));	
+        for (int k = 0; k < K; k++)
+            for (int j = 0; j < N; j++) {
+                MAT_C(i,j) += MAT_A(i, k) * MAT_B(k, j);
         }
+    }
 }
 
 void check(int M, int N, float *C_ref, int ldc_ref, float *C_opt, int ldc_opt) {
