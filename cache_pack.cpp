@@ -12,7 +12,6 @@
 const int Mc = 64;
 const int Nc = 128;
 const int Kc = 64;
-const float GFLOPS = 102.8;
 //为了内存连续统一进行pack，使块的内存连续。
 //并调整大块的循环 从ipj改为pji，先pack b再pack a
 
@@ -115,8 +114,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < K * N; i++) B[i] = (float)rand() / RAND_MAX;
 
     // 性能基准测试
-    GemmTimer::bench("naive",     M, N, K, 20, GFLOPS, [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
-    GemmTimer::bench("cache_pack",     M, N, K, 100, GFLOPS, [&](){ cache_block_pack(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("naive",     M, N, K, 20, [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
+    GemmTimer::bench("cache_pack",     M, N, K, 100, [&](){ cache_block_pack(M, N, K, A, lda, B, ldb, C_opt, ldc); });
     
     // 正确性验证
     check(M, N, C_naive, ldc, C_opt, ldc);
