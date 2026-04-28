@@ -74,8 +74,7 @@ static inline void micro_kernel(
     int Kc,
     const float *A_pack,    // 列主序，步长 Mr
     const float *B_pack,    // 行主序，步长 Nr
-    float *C, int ldc)
-{
+    float *C, int ldc){
     //前四个                                      后四个
     float32x4_t cv00 = vld1q_f32(&MAT_C(0, 0));  float32x4_t cv01 = vld1q_f32(&MAT_C(0, 4));
     float32x4_t cv10 = vld1q_f32(&MAT_C(1, 0));  float32x4_t cv11 = vld1q_f32(&MAT_C(1, 4));
@@ -108,52 +107,165 @@ static inline void micro_kernel(
     vst1q_f32(&MAT_C(3, 0), cv30);  vst1q_f32(&MAT_C(3, 4), cv31);
 }
 
-void register_neon_gemm(int M, int N, int K,
-                        float * __restrict__ A, int lda,
-                        float * __restrict__ B, int ldb,
-                        float * __restrict__ C, int ldc)
-{
-    float * __restrict__ A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
-    float * __restrict__ B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+void register_block(int i_len, int j_len, int k_len,
+                    float * __restrict__ A_pack,
+                    float * __restrict__ B_pack,
+                    float * __restrict__ C, int ldc) {
+    for (int ir = 0; ir < i_len; ir += Mr) {
+        for (int jr = 0; jr < j_len; jr += Nr) {
+            micro_kernel(
+                k_len,
+                &A_pack[ir * k_len],
+                &B_pack[(jr / Nr) * k_len * Nr],
+                &MAT_C(ir, jr), ldc
+            );
+        }
+    }
+}
 
+// 每种内部都是: pack_A, pack_B, 清零, register_block
+// 区别只在三层循环的嵌套顺序
 
+//  k -> j -> i
+void cache_kji(int M, int N, int K,
+               float * __restrict__ A, int lda,
+               float * __restrict__ B, int ldb,
+               float * __restrict__ C, int ldc){
+    float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
+    float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int k = 0; k < K; k += Kc) {
         int k_len = std::min(Kc, K - k);
-
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
-
             pack_B(k_len, j_len, B, ldb, B_pack, k, j);
-
             for (int i = 0; i < M; i += Mc) {
                 int i_len = std::min(Mc, M - i);
-
                 pack_A(i_len, k_len, A, lda, A_pack, i, k);
-
-                if (k == 0) {
-                    for (int ic = i; ic < i + i_len; ic++)
-                        for (int jc = j; jc < j + j_len; jc++)
-                            MAT_C(ic, jc) = 0.0f;
-                }
-
-                for (int ir = 0; ir < i_len; ir += Mr) {
-                    for (int jr = 0; jr < j_len; jr += Nr) {
-                        micro_kernel(
-                            k_len,
-                            &A_pack[ir * k_len],
-                            
-                            &B_pack[(jr / Nr) * k_len * Nr],  //跳到第 jr/Nr 个 panel 的起始地址。
-                            &MAT_C(i + ir, j + jr), ldc
-                        );
-                    }
-                }
+                if (k == 0) { for (int ic = i; ic < i+i_len; ic++) for (int jc = j; jc < j+j_len; jc++) MAT_C(ic,jc) = 0.0f; }
+                register_block(i_len, j_len, k_len, A_pack, B_pack, &MAT_C(i,j), ldc);
             }
         }
     }
-
-    free(A_pack);
-    free(B_pack);
+    free(A_pack); free(B_pack);
 }
+
+// k -> i -> j
+void cache_kij(int M, int N, int K,
+               float * __restrict__ A, int lda,
+               float * __restrict__ B, int ldb,
+               float * __restrict__ C, int ldc){
+    float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
+    float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+    for (int k = 0; k < K; k += Kc) {
+        int k_len = std::min(Kc, K - k);
+        for (int i = 0; i < M; i += Mc) {
+            int i_len = std::min(Mc, M - i);
+            pack_A(i_len, k_len, A, lda, A_pack, i, k);
+            for (int j = 0; j < N; j += Nc) {
+                int j_len = std::min(Nc, N - j);
+                pack_B(k_len, j_len, B, ldb, B_pack, k, j);
+                if (k == 0) { for (int ic = i; ic < i+i_len; ic++) for (int jc = j; jc < j+j_len; jc++) MAT_C(ic,jc) = 0.0f; }
+                register_block(i_len, j_len, k_len, A_pack, B_pack, &MAT_C(i,j), ldc);
+            }
+        }
+    }
+    free(A_pack); free(B_pack);
+}
+
+// i -> j -> k
+void cache_ijk(int M, int N, int K,
+               float * __restrict__ A, int lda,
+               float * __restrict__ B, int ldb,
+               float * __restrict__ C, int ldc){
+    float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
+    float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+    for (int i = 0; i < M; i += Mc) {
+        int i_len = std::min(Mc, M - i);
+        for (int j = 0; j < N; j += Nc) {
+            int j_len = std::min(Nc, N - j);
+            for (int ic = i; ic < i+i_len; ic++) for (int jc = j; jc < j+j_len; jc++) MAT_C(ic,jc) = 0.0f;
+            for (int k = 0; k < K; k += Kc) {
+                int k_len = std::min(Kc, K - k);
+                pack_A(i_len, k_len, A, lda, A_pack, i, k);
+                pack_B(k_len, j_len, B, ldb, B_pack, k, j);
+                register_block(i_len, j_len, k_len, A_pack, B_pack, &MAT_C(i,j), ldc);
+            }
+        }
+    }
+    free(A_pack); free(B_pack);
+}
+
+// i -> k -> j
+void cache_ikj(int M, int N, int K,
+               float * __restrict__ A, int lda,
+               float * __restrict__ B, int ldb,
+               float * __restrict__ C, int ldc){
+    float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
+    float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+    for (int i = 0; i < M; i += Mc) {
+        int i_len = std::min(Mc, M - i);
+        for (int k = 0; k < K; k += Kc) {
+            int k_len = std::min(Kc, K - k);
+            pack_A(i_len, k_len, A, lda, A_pack, i, k);
+            for (int j = 0; j < N; j += Nc) {
+                int j_len = std::min(Nc, N - j);
+                pack_B(k_len, j_len, B, ldb, B_pack, k, j);
+                if (k == 0) { for (int ic = i; ic < i+i_len; ic++) for (int jc = j; jc < j+j_len; jc++) MAT_C(ic,jc) = 0.0f; }
+                register_block(i_len, j_len, k_len, A_pack, B_pack, &MAT_C(i,j), ldc);
+            }
+        }
+    }
+    free(A_pack); free(B_pack);
+}
+
+// j -> i -> k
+void cache_jik(int M, int N, int K,
+               float * __restrict__ A, int lda,
+               float * __restrict__ B, int ldb,
+               float * __restrict__ C, int ldc){
+    float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
+    float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+    for (int j = 0; j < N; j += Nc) {
+        int j_len = std::min(Nc, N - j);
+        for (int i = 0; i < M; i += Mc) {
+            int i_len = std::min(Mc, M - i);
+            for (int ic = i; ic < i+i_len; ic++) for (int jc = j; jc < j+j_len; jc++) MAT_C(ic,jc) = 0.0f;
+            for (int k = 0; k < K; k += Kc) {
+                int k_len = std::min(Kc, K - k);
+                pack_A(i_len, k_len, A, lda, A_pack, i, k);
+                pack_B(k_len, j_len, B, ldb, B_pack, k, j);
+                register_block(i_len, j_len, k_len, A_pack, B_pack, &MAT_C(i,j), ldc);
+            }
+        }
+    }
+    free(A_pack); free(B_pack);
+}
+
+// j -> k -> i
+void cache_jki(int M, int N, int K,
+               float * __restrict__ A, int lda,
+               float * __restrict__ B, int ldb,
+               float * __restrict__ C, int ldc){
+    float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
+    float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+    for (int j = 0; j < N; j += Nc) {
+        int j_len = std::min(Nc, N - j);
+        for (int k = 0; k < K; k += Kc) {
+            int k_len = std::min(Kc, K - k);
+            pack_B(k_len, j_len, B, ldb, B_pack, k, j);
+            for (int i = 0; i < M; i += Mc) {
+                int i_len = std::min(Mc, M - i);
+                pack_A(i_len, k_len, A, lda, A_pack, i, k);
+                if (k == 0) { for (int ic = i; ic < i+i_len; ic++) for (int jc = j; jc < j+j_len; jc++) MAT_C(ic,jc) = 0.0f; }
+                register_block(i_len, j_len, k_len, A_pack, B_pack, &MAT_C(i,j), ldc);
+            }
+        }
+    }
+    free(A_pack); free(B_pack);
+}
+
+
+typedef void (*gemm_fn)(int, int, int, float*, int, float*, int, float*, int);
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
@@ -171,19 +283,33 @@ int main(int argc, char *argv[]) {
     }
 
     int lda = K, ldb = N, ldc = N;
-
-    float *A        = (float *)aligned_alloc(64, M * K * sizeof(float));
-    float *B        = (float *)aligned_alloc(64, K * N * sizeof(float));
-    float *C_naive  = (float *)aligned_alloc(64, M * N * sizeof(float));
-    float *C_opt    = (float *)aligned_alloc(64, M * N * sizeof(float));
+    float *A       = (float *)aligned_alloc(64, M * K * sizeof(float));
+    float *B       = (float *)aligned_alloc(64, K * N * sizeof(float));
+    float *C_naive = (float *)aligned_alloc(64, M * N * sizeof(float));
+    float *C_opt   = (float *)aligned_alloc(64, M * N * sizeof(float));
 
     std::srand(time(NULL));
     for (int i = 0; i < M * K; i++) A[i] = (float)std::rand() / RAND_MAX;
     for (int i = 0; i < K * N; i++) B[i] = (float)std::rand() / RAND_MAX;
 
-    GemmTimer::bench("naive",         M, N, K, 20, [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
-    GemmTimer::bench("register_neon", M, N, K, 100, [&](){ register_neon_gemm(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("naive", M, N, K, 20, [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
 
+    GemmTimer::bench("kji", M, N, K, 100, [&](){ cache_kji(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    check(M, N, C_naive, ldc, C_opt, ldc);
+
+    GemmTimer::bench("kij", M, N, K, 100, [&](){ cache_kij(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    check(M, N, C_naive, ldc, C_opt, ldc);
+
+    GemmTimer::bench("ijk", M, N, K, 100, [&](){ cache_ijk(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    check(M, N, C_naive, ldc, C_opt, ldc);
+
+    GemmTimer::bench("ikj", M, N, K, 100, [&](){ cache_ikj(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    check(M, N, C_naive, ldc, C_opt, ldc);
+
+    GemmTimer::bench("jik", M, N, K, 100, [&](){ cache_jik(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    check(M, N, C_naive, ldc, C_opt, ldc);
+
+    GemmTimer::bench("jki", M, N, K, 100, [&](){ cache_jki(M, N, K, A, lda, B, ldb, C_opt, ldc); });
     check(M, N, C_naive, ldc, C_opt, ldc);
 
     free(A); free(B); free(C_naive); free(C_opt);

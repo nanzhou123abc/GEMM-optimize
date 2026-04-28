@@ -17,7 +17,7 @@ test: $(BINS)
 		echo "========== $$bin =========="; \
 		./$$bin $(SIZE); \
 		echo ""; \
-	done  
+	done
 
 clean:
 	rm -f $(BINS)

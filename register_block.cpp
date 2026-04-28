@@ -74,8 +74,7 @@ static inline void micro_kernel(
     int Kc,
     const float *A_pack,                // 列主序，步长 MR
     const float *B_pack, int ldb,   // 行主序，步长 j_len
-    float *C, int ldc)
-{
+    float *C, int ldc){
     // Mr×Nr = 4×4 = 16 个寄存器变量
     float c00 = 0, c01 = 0, c02 = 0, c03 = 0;
     float c10 = 0, c11 = 0, c12 = 0, c13 = 0;
@@ -112,8 +111,7 @@ static inline void micro_kernel(
 void register_gemm(int M, int N, int K,
                    float * __restrict__ A, int lda,
                    float * __restrict__ B, int ldb,
-                   float * __restrict__ C, int ldc)
-{
+                   float * __restrict__ C, int ldc){
     float * __restrict__ A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float * __restrict__ B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
 

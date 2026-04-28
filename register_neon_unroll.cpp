@@ -77,8 +77,8 @@ static inline void micro_kernel(
     int Kc,
     const float *A_pack,
     const float *B_pack,
-    float *C, int ldc)
-{
+    float *C, int ldc){
+        
     float32x4_t cv00 = vld1q_f32(&MAT_C(0, 0));  float32x4_t cv01 = vld1q_f32(&MAT_C(0, 4));
     float32x4_t cv10 = vld1q_f32(&MAT_C(1, 0));  float32x4_t cv11 = vld1q_f32(&MAT_C(1, 4));
     float32x4_t cv20 = vld1q_f32(&MAT_C(2, 0));  float32x4_t cv21 = vld1q_f32(&MAT_C(2, 4));
@@ -177,8 +177,7 @@ static inline void micro_kernel(
 void register_neon_unroll_gemm(int M, int N, int K,
                                float * __restrict__ A, int lda,
                                float * __restrict__ B, int ldb,
-                               float * __restrict__ C, int ldc)
-{
+                               float * __restrict__ C, int ldc){
     float * __restrict__ A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float * __restrict__ B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
 
