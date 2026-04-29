@@ -38,7 +38,7 @@ static inline float get_B(const int8_t *B_packed, int ldb,
 
     float s  = bf16_to_fp32(scale[scale_idx]);
     float zp = 0.0f;
-    if (zero_point) {
+     if (zero_point) {
         int zb = scale_idx / 2;
         zp = (scale_idx % 2 == 0)
             ? (float)unpack_int4_lo(zero_point[zb])

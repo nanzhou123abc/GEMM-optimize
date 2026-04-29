@@ -1,9 +1,10 @@
 CXX      = g++
-CXXFLAGS = -O2 -march=native -funroll-loops -ffast-math -std=c++11
+CXXFLAGS = -O2 -march=armv8-a+simd+nosve -funroll-loops  -std=c++11 
 SIZE     = 1024 1024 1024
 
 SRCS = ipj.cpp cache.cpp cache_pack.cpp cache_pack_unroll.cpp \
-       register_block.cpp register_neon.cpp register_neon_unroll.cpp
+       register_block.cpp register_neon.cpp register_neon_unroll.cpp \
+       register_neon_4x16.cpp register_neon_unroll_4x16.cpp
 
 BINS = $(SRCS:.cpp=)
 
@@ -21,3 +22,4 @@ test: $(BINS)
 
 clean:
 	rm -f $(BINS)
+	rm -f a.out
