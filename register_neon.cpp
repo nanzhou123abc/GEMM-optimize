@@ -19,6 +19,7 @@ constexpr int Kc = 64;
 //微内核改为4*8
 //修改pack B的写法保证一行 8个，方便neon
 //pack B 的结构：B_pack[panel][kc][jr]     panel 的大小是 k_len * 8
+//pack A 的结构：A_pack[panel][ir][kc]     panel 的大小是 4 * Kc
 //C使用8个寄存器。
 void naive(int M, int N, int K, float *A, int lda, float *B, int ldb, float *C, int ldc) {
    
@@ -93,10 +94,10 @@ static inline void micro_kernel(
         float32x4_t av3 = vld1q_dup_f32(A_pack + kr * 4 + 3);
 
         // FMA 
-        cv00 = vfmaq_f32(cv00, bv_lo, av0);  cv01 = vfmaq_f32(cv01, bv_hi, av0);
-        cv10 = vfmaq_f32(cv10, bv_lo, av1);  cv11 = vfmaq_f32(cv11, bv_hi, av1);
-        cv20 = vfmaq_f32(cv20, bv_lo, av2);  cv21 = vfmaq_f32(cv21, bv_hi, av2);
-        cv30 = vfmaq_f32(cv30, bv_lo, av3);  cv31 = vfmaq_f32(cv31, bv_hi, av3);
+        cv00 = vfmaq_f32(cv00, av0, bv_lo);  cv01 = vfmaq_f32(cv01, av0, bv_hi);
+        cv10 = vfmaq_f32(cv10, av1, bv_lo);  cv11 = vfmaq_f32(cv11, av1, bv_hi);
+        cv20 = vfmaq_f32(cv20, av2, bv_lo);  cv21 = vfmaq_f32(cv21, av2, bv_hi);
+        cv30 = vfmaq_f32(cv30, av3, bv_lo);  cv31 = vfmaq_f32(cv31, av3, bv_hi);
     }
 
     // 写回 C

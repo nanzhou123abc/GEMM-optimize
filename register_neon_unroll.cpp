@@ -126,28 +126,28 @@ static inline void micro_kernel(
         bp += 4 * Nr;
 
         // FMA k+0
-        cv00 = vfmaq_f32(cv00, bv0_lo, av0_0);  cv01 = vfmaq_f32(cv01, bv0_hi, av0_0);
-        cv10 = vfmaq_f32(cv10, bv0_lo, av0_1);  cv11 = vfmaq_f32(cv11, bv0_hi, av0_1);
-        cv20 = vfmaq_f32(cv20, bv0_lo, av0_2);  cv21 = vfmaq_f32(cv21, bv0_hi, av0_2);
-        cv30 = vfmaq_f32(cv30, bv0_lo, av0_3);  cv31 = vfmaq_f32(cv31, bv0_hi, av0_3);
+        cv00 = vfmaq_f32(cv00, av0_0, bv0_lo);  cv01 = vfmaq_f32(cv01, av0_0, bv0_hi);
+        cv10 = vfmaq_f32(cv10, av0_1, bv0_lo);  cv11 = vfmaq_f32(cv11, av0_1, bv0_hi);
+        cv20 = vfmaq_f32(cv20, av0_2, bv0_lo);  cv21 = vfmaq_f32(cv21, av0_2, bv0_hi);
+        cv30 = vfmaq_f32(cv30, av0_3, bv0_lo);  cv31 = vfmaq_f32(cv31, av0_3, bv0_hi);
 
         // FMA k+1
-        cv00 = vfmaq_f32(cv00, bv1_lo, av1_0);  cv01 = vfmaq_f32(cv01, bv1_hi, av1_0);
-        cv10 = vfmaq_f32(cv10, bv1_lo, av1_1);  cv11 = vfmaq_f32(cv11, bv1_hi, av1_1);
-        cv20 = vfmaq_f32(cv20, bv1_lo, av1_2);  cv21 = vfmaq_f32(cv21, bv1_hi, av1_2);
-        cv30 = vfmaq_f32(cv30, bv1_lo, av1_3);  cv31 = vfmaq_f32(cv31, bv1_hi, av1_3);
+        cv00 = vfmaq_f32(cv00, av1_0, bv1_lo);  cv01 = vfmaq_f32(cv01, av1_0, bv1_hi);
+        cv10 = vfmaq_f32(cv10, av1_1, bv1_lo);  cv11 = vfmaq_f32(cv11, av1_1, bv1_hi);
+        cv20 = vfmaq_f32(cv20, av1_2, bv1_lo);  cv21 = vfmaq_f32(cv21, av1_2, bv1_hi);
+        cv30 = vfmaq_f32(cv30, av1_3, bv1_lo);  cv31 = vfmaq_f32(cv31, av1_3, bv1_hi);
 
         // FMA k+2
-        cv00 = vfmaq_f32(cv00, bv2_lo, av2_0);  cv01 = vfmaq_f32(cv01, bv2_hi, av2_0);
-        cv10 = vfmaq_f32(cv10, bv2_lo, av2_1);  cv11 = vfmaq_f32(cv11, bv2_hi, av2_1);
-        cv20 = vfmaq_f32(cv20, bv2_lo, av2_2);  cv21 = vfmaq_f32(cv21, bv2_hi, av2_2);
-        cv30 = vfmaq_f32(cv30, bv2_lo, av2_3);  cv31 = vfmaq_f32(cv31, bv2_hi, av2_3);
+        cv00 = vfmaq_f32(cv00, av2_0, bv2_lo);  cv01 = vfmaq_f32(cv01, av2_0, bv2_hi);
+        cv10 = vfmaq_f32(cv10, av2_1, bv2_lo);  cv11 = vfmaq_f32(cv11, av2_1, bv2_hi);
+        cv20 = vfmaq_f32(cv20, av2_2, bv2_lo);  cv21 = vfmaq_f32(cv21, av2_2, bv2_hi);
+        cv30 = vfmaq_f32(cv30, av2_3, bv2_lo);  cv31 = vfmaq_f32(cv31, av2_3, bv2_hi);
 
         // FMA k+3
-        cv00 = vfmaq_f32(cv00, bv3_lo, av3_0);  cv01 = vfmaq_f32(cv01, bv3_hi, av3_0);
-        cv10 = vfmaq_f32(cv10, bv3_lo, av3_1);  cv11 = vfmaq_f32(cv11, bv3_hi, av3_1);
-        cv20 = vfmaq_f32(cv20, bv3_lo, av3_2);  cv21 = vfmaq_f32(cv21, bv3_hi, av3_2);
-        cv30 = vfmaq_f32(cv30, bv3_lo, av3_3);  cv31 = vfmaq_f32(cv31, bv3_hi, av3_3);
+        cv00 = vfmaq_f32(cv00, av3_0, bv3_lo);  cv01 = vfmaq_f32(cv01, av3_0, bv3_hi);
+        cv10 = vfmaq_f32(cv10, av3_1, bv3_lo);  cv11 = vfmaq_f32(cv11, av3_1, bv3_hi);
+        cv20 = vfmaq_f32(cv20, av3_2, bv3_lo);  cv21 = vfmaq_f32(cv21, av3_2, bv3_hi);
+        cv30 = vfmaq_f32(cv30, av3_3, bv3_lo);  cv31 = vfmaq_f32(cv31, av3_3, bv3_hi);
     }
 
     // 尾部处理: 剩余不足 4 个的 k
@@ -159,10 +159,10 @@ static inline void micro_kernel(
         float32x4_t a2 = vld1q_dup_f32(ap + 2);
         float32x4_t a3 = vld1q_dup_f32(ap + 3);
 
-        cv00 = vfmaq_f32(cv00, bv_lo, a0);  cv01 = vfmaq_f32(cv01, bv_hi, a0);
-        cv10 = vfmaq_f32(cv10, bv_lo, a1);  cv11 = vfmaq_f32(cv11, bv_hi, a1);
-        cv20 = vfmaq_f32(cv20, bv_lo, a2);  cv21 = vfmaq_f32(cv21, bv_hi, a2);
-        cv30 = vfmaq_f32(cv30, bv_lo, a3);  cv31 = vfmaq_f32(cv31, bv_hi, a3);
+        cv00 = vfmaq_f32(cv00, a0, bv_lo);  cv01 = vfmaq_f32(cv01, a0, bv_hi);
+        cv10 = vfmaq_f32(cv10, a1, bv_lo);  cv11 = vfmaq_f32(cv11, a1, bv_hi);
+        cv20 = vfmaq_f32(cv20, a2, bv_lo);  cv21 = vfmaq_f32(cv21, a2, bv_hi);
+        cv30 = vfmaq_f32(cv30, a3, bv_lo);  cv31 = vfmaq_f32(cv31, a3, bv_hi);
 
         ap += Mr;
         bp += Nr;

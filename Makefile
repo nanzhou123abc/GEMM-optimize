@@ -4,7 +4,9 @@ SIZE     = 1024 1024 1024
 
 SRCS = ipj.cpp cache.cpp cache_pack.cpp cache_pack_unroll.cpp \
        register_block.cpp register_neon.cpp register_neon_unroll.cpp \
-       register_neon_4x16.cpp register_neon_unroll_4x16.cpp
+       register_neon_4x16.cpp register_neon_unroll_4x16.cpp \
+       register_neon_unroll_6x4.cpp register_neon_unroll_4x16_interleave.cpp \
+	   register_neon_unroll_4x16_interleave_nopack.cpp register_neon_unroll_4x16_general.cpp
 
 BINS = $(SRCS:.cpp=)
 
@@ -18,6 +20,7 @@ test: $(BINS)
 		echo "========== $$bin =========="; \
 		./$$bin $(SIZE); \
 		echo ""; \
+		sleep 5; \
 	done
 
 clean:

@@ -22,17 +22,17 @@ static inline float get_B(const int8_t *B_packed, int ldb,
     int pc = (trans == CblasNoTrans) ? col : row;
 
     // 解包 INT4
-    int byte_idx = pr * ((ldb + 1) / 2) + pc / 2;
+    int byte_idx = pr * ((ldb + 1) / 2) + pc / 2;  //第几个int8
     int8_t packed = B_packed[byte_idx];
-    int8_t val = (pc % 2 == 0) ? unpack_int4_lo(packed) : unpack_int4_hi(packed);
+    int8_t val = (pc % 2 == 0) ? unpack_int4_lo(packed) : unpack_int4_hi(packed);  //得到int4
 
     // scale / zero_point 索引
-    int scale_idx;
+    int scale_idx; //scale 组
     if (group_size == 0) {
         scale_idx = col;
     } else {
-        int gid = row / group_size;
-        int ng  = (K_dim + group_size - 1) / group_size;
+        int gid = row / group_size;  //当前行是第几组
+        int ng  = (K_dim + group_size - 1) / group_size; //分组编号
         scale_idx = col * ng + gid;
     }
 

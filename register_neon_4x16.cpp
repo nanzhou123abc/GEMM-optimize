@@ -97,14 +97,14 @@ static inline void micro_kernel(
         float32x4_t a2 = vld1q_dup_f32(ap + 2);
         float32x4_t a3 = vld1q_dup_f32(ap + 3);
 
-        cv00 = vfmaq_f32(cv00, bv0, a0);  cv01 = vfmaq_f32(cv01, bv1, a0);
-        cv02 = vfmaq_f32(cv02, bv2, a0);  cv03 = vfmaq_f32(cv03, bv3, a0);
-        cv10 = vfmaq_f32(cv10, bv0, a1);  cv11 = vfmaq_f32(cv11, bv1, a1);
-        cv12 = vfmaq_f32(cv12, bv2, a1);  cv13 = vfmaq_f32(cv13, bv3, a1);
-        cv20 = vfmaq_f32(cv20, bv0, a2);  cv21 = vfmaq_f32(cv21, bv1, a2);
-        cv22 = vfmaq_f32(cv22, bv2, a2);  cv23 = vfmaq_f32(cv23, bv3, a2);
-        cv30 = vfmaq_f32(cv30, bv0, a3);  cv31 = vfmaq_f32(cv31, bv1, a3);
-        cv32 = vfmaq_f32(cv32, bv2, a3);  cv33 = vfmaq_f32(cv33, bv3, a3);
+        cv00 = vfmaq_f32(cv00, a0, bv0);  cv01 = vfmaq_f32(cv01, a0, bv1);
+        cv02 = vfmaq_f32(cv02, a0, bv2);  cv03 = vfmaq_f32(cv03, a0, bv3);
+        cv10 = vfmaq_f32(cv10, a1, bv0);  cv11 = vfmaq_f32(cv11, a1, bv1);
+        cv12 = vfmaq_f32(cv12, a1, bv2);  cv13 = vfmaq_f32(cv13, a1, bv3);
+        cv20 = vfmaq_f32(cv20, a2, bv0);  cv21 = vfmaq_f32(cv21, a2, bv1);
+        cv22 = vfmaq_f32(cv22, a2, bv2);  cv23 = vfmaq_f32(cv23, a2, bv3);
+        cv30 = vfmaq_f32(cv30, a3, bv0);  cv31 = vfmaq_f32(cv31, a3, bv1);
+        cv32 = vfmaq_f32(cv32, a3, bv2);  cv33 = vfmaq_f32(cv33, a3, bv3);
 
         ap += Mr;
         bp += Nr;
