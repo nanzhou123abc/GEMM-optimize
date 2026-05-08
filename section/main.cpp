@@ -11,8 +11,8 @@
 #include "register.hpp"
 
 int main(int argc, char *argv[]) {
-    if (argc != 7) {
-        printf("用法: %s M N K Mc Nc Kc\n", argv[0]);
+    if (argc != 9) {
+        printf("用法: %s M N K Mc Nc Kc Mr Nr\n", argv[0]);
         return 1;
     }
 
@@ -22,8 +22,14 @@ int main(int argc, char *argv[]) {
     int Mc = atoi(argv[4]);
     int Nc = atoi(argv[5]);
     int Kc = atoi(argv[6]);
-    if (M % 4 != 0 || N % 16 != 0) {
-        printf("错误: M 必须是 %d 的倍数, N 必须是 %d 的倍数\n", 4, 16);
+    int Mr = atoi(argv[7]);
+    int Nr = atoi(argv[8]);
+    if (Mr != 4 || Nr != 16) {
+        printf("错误: 当前 section 微内核只支持 Mr=%d, Nr=%d\n", 4, 16);
+        return 1;
+    }
+    if (M % Mr != 0 || N % Nr != 0 || Mc % Mr != 0 || Nc % Nr != 0) {
+        printf("错误: M/Mc 必须是 %d 的倍数, N/Nc 必须是 %d 的倍数\n", Mr, Nr);
         return 1;
     }
 
@@ -44,8 +50,12 @@ int main(int argc, char *argv[]) {
     //3:ikj
     //4:jik
     //5:jki
-    GemmTimer::bench("naive",                    M, N, K, 20,  [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
-    GemmTimer::bench("opt", M, N, K, 100, [&](){ cache (0,M, N, K,Mc, Nc, Kc, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("naive", M, N, K, 20, [&](){
+        naive(M, N, K, A, lda, B, ldb, C_naive, ldc);
+    });
+    GemmTimer::bench("opt", M, N, K, 100, [&](){
+        cache(0, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
+    });
 
     check(M, N, C_naive, ldc, C_opt, ldc);
 
