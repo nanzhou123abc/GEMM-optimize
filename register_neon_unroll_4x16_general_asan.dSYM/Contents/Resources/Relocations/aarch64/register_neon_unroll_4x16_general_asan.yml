@@ -1,5 +1,0 @@
----
-triple:          'arm64-apple-darwin'
-binary-path:     register_neon_unroll_4x16_general_asan
-relocations:     []
-...
