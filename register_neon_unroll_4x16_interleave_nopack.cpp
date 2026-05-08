@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < K * N; i++) B[i] = (float)std::rand() / RAND_MAX;
 
     GemmTimer::bench("naive",                    M, N, K, 20,  [&](){ naive(M, N, K, A, lda, B, ldb, C_naive, ldc); });
-    GemmTimer::bench("register_neon_4x16_nopack", M, N, K, 200, [&](){ register_neon_u16oll_gemm(M, N, K, A, lda, B, ldb, C_opt, ldc); });
+    GemmTimer::bench("register_neon_4x16_nopack", M, N, K, 100, [&](){ register_neon_u16oll_gemm(M, N, K, A, lda, B, ldb, C_opt, ldc); });
 
     check(M, N, C_naive, ldc, C_opt, ldc);
 
