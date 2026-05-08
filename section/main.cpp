@@ -11,7 +11,7 @@
 #include "register.hpp"
 
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
+    if (argc != 7) {
         printf("用法: %s M N K Mc Nc Kc\n", argv[0]);
         return 1;
     }

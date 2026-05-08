@@ -10,7 +10,7 @@
 #define MAT_A(i,j) A[ (i)*lda + (j) ]
 #define MAT_B(i,j) B[ (i)*ldb + (j) ]
 #define MAT_C(i,j) C[ (i)*ldc + (j) ]
-static inline void register_block_4x4(
+void register_block_4x4(
     int Kc,
     const float *A_pack,
     const float *B_pack,

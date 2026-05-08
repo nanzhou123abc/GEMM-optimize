@@ -23,7 +23,7 @@ public:
         // std::cout<< "sec:" << sec <<std::endl;
         sec /= run_times;
         double gflops = (2.0 * m * n * k) / (sec * 1e9);
-        std::printf("Timer: %-16s %8.3f GFLOPS  (%.4f ms)   %8.3f % \n", name, gflops, sec * 1e3, gflops / 103.3 * 100);
+        std::printf("Timer: %-16s %8.3f GFLOPS  (%.4f ms)   %8.3f \n", name, gflops, sec * 1e3, gflops / 103.3 * 100);
         return gflops;
     }
 };

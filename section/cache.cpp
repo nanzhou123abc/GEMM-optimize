@@ -238,34 +238,50 @@ void cache_jki(int M, int N, int K,
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int j = 0; j < N; j += Nc) {
-    int j_len = std::min(Nc, N - j);
-    
-    for (int i = 0; i < M; i++)
-        memset(&MAT_C(i, j), 0, j_len * sizeof(float));
+        int j_len = std::min(Nc, N - j);
+        
+        for (int i = 0; i < M; i++)
+            memset(&MAT_C(i, j), 0, j_len * sizeof(float));
 
-    for (int k = 0; k < K; k += Kc) {
-        int k_len = std::min(Kc, K - k);
-        pack_B(k_len, j_len, B, ldb, B_pack, k, j);
+        for (int k = 0; k < K; k += Kc) {
+            int k_len = std::min(Kc, K - k);
+            pack_B(k_len, j_len, B, ldb, B_pack, k, j);
 
-        for (int i = 0; i < M; i += Mc) {
-            int i_len = std::min(Mc, M - i);
+            for (int i = 0; i < M; i += Mc) {
+                int i_len = std::min(Mc, M - i);
 
-        // Pack A: 整个 Mc×Kc 块，按 4 一组
-            for (int ic = 0; ic < i_len; ic += 4) {
-                pack_A(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
-            }
+            // Pack A: 整个 Mc×Kc 块，按 4 一组
+                for (int ic = 0; ic < i_len; ic += 4) {
+                    pack_A(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
+                }
 
 
-            for (int ir = 0; ir < i_len; ir += 4) {
-                for (int jr = 0; jr < j_len; jr += 16) {
-                    register_block_4x4(
-                        k_len,
-                        &A_pack[ir * k_len],
-                        &B_pack[(jr / 16) * k_len * 16],
-                        &MAT_C(i + ir, j + jr), ldc
-                    );
+                for (int ir = 0; ir < i_len; ir += 4) {
+                    for (int jr = 0; jr < j_len; jr += 16) {
+                        register_block_4x4(
+                            k_len,
+                            &A_pack[ir * k_len],
+                            &B_pack[(jr / 16) * k_len * 16],
+                            &MAT_C(i + ir, j + jr), ldc
+                        );
+                    }
                 }
             }
         }
+    }
+}
+
+void cache(int op, int M, int N, int K,
+           int Mc, int Nc, int Kc,
+           float * __restrict__ A, int lda,
+           float * __restrict__ B, int ldb,
+           float * __restrict__ C, int ldc) {
+    switch (op) {
+        case 0: cache_kji(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 1: cache_kij(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 2: cache_ijk(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 3: cache_ikj(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 4: cache_jik(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 5: cache_jki(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
     }
 }
