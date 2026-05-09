@@ -68,7 +68,7 @@ void cache_kji_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        RegisterBlock<Mr, Nr>::run(
+                        register_block_4x4(
                             k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
@@ -107,7 +107,7 @@ void cache_kij_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        RegisterBlock<Mr, Nr>::run(
+                        register_block_4x4(
                             k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
@@ -144,7 +144,7 @@ void cache_ijk_impl(int M, int N, int K,
                 pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        RegisterBlock<Mr, Nr>::run(
+                        register_block_4x4(
                             k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
@@ -183,7 +183,7 @@ void cache_ikj_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        RegisterBlock<Mr, Nr>::run(
+                        register_block_4x4(
                             k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
@@ -220,7 +220,7 @@ void cache_jik_impl(int M, int N, int K,
                 pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        RegisterBlock<Mr, Nr>::run(
+                        register_block_4x4(
                             k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
@@ -256,7 +256,7 @@ void cache_jki_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        RegisterBlock<Mr, Nr>::run(
+                        register_block_4x4(
                             k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
