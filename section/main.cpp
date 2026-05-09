@@ -24,8 +24,15 @@ int main(int argc, char *argv[]) {
     int Kc = atoi(argv[6]);
     int Mr = atoi(argv[7]);
     int Nr = atoi(argv[8]);
-    if (Mr != 4 || Nr != 16) {
-        printf("错误: 当前 section 微内核只支持 Mr=%d, Nr=%d\n", 4, 16);
+    bool supported_kernel =
+        (Mr == 4 && Nr == 16) ||
+        (Mr == 5 && Nr == 16) ||
+        (Mr == 4 && Nr == 20) ||
+        (Mr == 6 && Nr == 16) ||
+        (Mr == 4 && Nr == 24) ||
+        (Mr == 3 && Nr == 16);
+    if (!supported_kernel) {
+        printf("错误: 当前 section 微内核只支持 (4,16) (5,16) (4,20) (6,16) (4,24) (3,16)\n");
         return 1;
     }
     if (M % Mr != 0 || N % Nr != 0 || Mc % Mr != 0 || Nc % Nr != 0) {
@@ -50,10 +57,10 @@ int main(int argc, char *argv[]) {
     //3:ikj
     //4:jik
     //5:jki
-    GemmTimer::bench("naive", M, N, K, 20, [&](){
+    GemmTimer::bench("naive", M, N, K, 50, [&](){
         naive(M, N, K, A, lda, B, ldb, C_naive, ldc);
     });
-    GemmTimer::bench("opt", M, N, K, 150, [&](){
+    GemmTimer::bench("opt", M, N, K, 300, [&](){
         cache(0, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
     });
 

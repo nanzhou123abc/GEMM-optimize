@@ -33,18 +33,9 @@ void pack_B(int Kc, int Nc, float *B, int ldb, float *B_pack, int k0, int j0) {
     }
 }
 
-template<int Mr, int Nr>
-struct RegisterBlock;
-
-template<>
-struct RegisterBlock<4, 16> {
-    static inline void run(int Kc, const float *A_pack, const float *B_pack, float *C, int ldc) {
-        register_block_4x4(Kc, A_pack, B_pack, C, ldc);
-    }
-};
 
 template<int Mr, int Nr>
-void cache_kji_impl(int M, int N, int K,
+void cache_kji (int M, int N, int K,
                                   int Mc, int Nc, int Kc,
                                   float * __restrict__ A, int lda,
                                   float * __restrict__ B, int ldb,
@@ -68,8 +59,8 @@ void cache_kji_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        register_block_4x4(
-                            k_len,
+                        register_block(
+                            Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
                             &MAT_C(i + ir, j + jr), ldc
@@ -83,7 +74,7 @@ void cache_kji_impl(int M, int N, int K,
 }
 
 template<int Mr, int Nr>
-void cache_kij_impl(int M, int N, int K,
+void cache_kij (int M, int N, int K,
                                   int Mc, int Nc, int Kc,
                                   float * __restrict__ A, int lda,
                                   float * __restrict__ B, int ldb,
@@ -107,8 +98,8 @@ void cache_kij_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        register_block_4x4(
-                            k_len,
+                        register_block(
+                            Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
                             &MAT_C(i + ir, j + jr), ldc
@@ -122,7 +113,7 @@ void cache_kij_impl(int M, int N, int K,
 }
 
 template<int Mr, int Nr>
-void cache_ijk_impl(int M, int N, int K,
+void cache_ijk (int M, int N, int K,
                                   int Mc, int Nc, int Kc,
                                   float * __restrict__ A, int lda,
                                   float * __restrict__ B, int ldb,
@@ -144,8 +135,8 @@ void cache_ijk_impl(int M, int N, int K,
                 pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        register_block_4x4(
-                            k_len,
+                        register_block(
+                            Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
                             &MAT_C(i + ir, j + jr), ldc
@@ -159,7 +150,7 @@ void cache_ijk_impl(int M, int N, int K,
 }
 
 template<int Mr, int Nr>
-void cache_ikj_impl(int M, int N, int K,
+void cache_ikj (int M, int N, int K,
                                   int Mc, int Nc, int Kc,
                                   float * __restrict__ A, int lda,
                                   float * __restrict__ B, int ldb,
@@ -183,8 +174,8 @@ void cache_ikj_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        register_block_4x4(
-                            k_len,
+                        register_block(
+                            Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
                             &MAT_C(i + ir, j + jr), ldc
@@ -198,7 +189,7 @@ void cache_ikj_impl(int M, int N, int K,
 }
 
 template<int Mr, int Nr>
-void cache_jik_impl(int M, int N, int K,
+void cache_jik (int M, int N, int K,
                                   int Mc, int Nc, int Kc,
                                   float * __restrict__ A, int lda,
                                   float * __restrict__ B, int ldb,
@@ -220,8 +211,8 @@ void cache_jik_impl(int M, int N, int K,
                 pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        register_block_4x4(
-                            k_len,
+                        register_block(
+                            Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
                             &MAT_C(i + ir, j + jr), ldc
@@ -235,7 +226,7 @@ void cache_jik_impl(int M, int N, int K,
 }
 
 template<int Mr, int Nr>
-void cache_jki_impl(int M, int N, int K,
+void cache_jki (int M, int N, int K,
                                   int Mc, int Nc, int Kc,
                                   float * __restrict__ A, int lda,
                                   float * __restrict__ B, int ldb,
@@ -256,8 +247,8 @@ void cache_jki_impl(int M, int N, int K,
                 }
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
-                        register_block_4x4(
-                            k_len,
+                        register_block(
+                            Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
                             &MAT_C(i + ir, j + jr), ldc
@@ -271,32 +262,34 @@ void cache_jki_impl(int M, int N, int K,
 }
 
 template<int Mr, int Nr>
-void cache_dispatch(int op, int M, int N, int K,
+void cache_op(int op, int M, int N, int K,
                                   int Mc, int Nc, int Kc,
                                   float * __restrict__ A, int lda,
                                   float * __restrict__ B, int ldb,
                                   float * __restrict__ C, int ldc) {
     switch (op) {
-        case 0: cache_kji_impl<Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
-        case 1: cache_kij_impl<Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
-        case 2: cache_ijk_impl<Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
-        case 3: cache_ikj_impl<Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
-        case 4: cache_jik_impl<Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
-        case 5: cache_jki_impl<Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 0: cache_kji <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 1: cache_kij <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 2: cache_ijk <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 3: cache_ikj <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 4: cache_jik <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
+        case 5: cache_jki <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
         default: std::printf("错误: 不支持的循环顺序 op=%d\n", op); break;
     }
 }
 
-static inline bool is_supported_kernel(int Mr, int Nr) {
-    return Mr == 4 && Nr == 16;
-}
+
 
 void cache(int op, int M, int N, int K,
            int Mc, int Nc, int Kc, int Mr, int Nr,
            float * __restrict__ A, int lda,
            float * __restrict__ B, int ldb,
            float * __restrict__ C, int ldc) {
-    if(Mr == 4 && Nr == 16)
-    cache_dispatch<4, 16>(op, M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc);
-
+    if (Mr == 4 && Nr == 16) { cache_op<4, 16>(op, M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); return; }
+    if (Mr == 5 && Nr == 16) { cache_op<5, 16>(op, M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); return; }
+    if (Mr == 4 && Nr == 20) { cache_op<4, 20>(op, M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); return; }
+    if (Mr == 6 && Nr == 16) { cache_op<6, 16>(op, M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); return; }
+    if (Mr == 4 && Nr == 24) { cache_op<4, 24>(op, M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); return; }
+    if (Mr == 3 && Nr == 16) { cache_op<3, 16>(op, M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); return; }
+    std::printf("错误: 当前 cache 不支持 Mr=%d, Nr=%d\n", Mr, Nr);
 }
