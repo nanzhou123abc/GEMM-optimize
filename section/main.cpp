@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     GemmTimer::bench("naive", M, N, K, 20, [&](){
         naive(M, N, K, A, lda, B, ldb, C_naive, ldc);
     });
-    GemmTimer::bench("opt", M, N, K, 100, [&](){
+    GemmTimer::bench("opt", M, N, K, 150, [&](){
         cache(0, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
     });
 
