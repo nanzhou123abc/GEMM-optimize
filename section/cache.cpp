@@ -42,6 +42,7 @@ void cache_kji (int M, int N, int K,
                                   float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+    memset(C, 0, M*N * sizeof(float));
     for (int k = 0; k < K; k += Kc) {
         int k_len = std::min(Kc, K - k);
         for (int j = 0; j < N; j += Nc) {
@@ -52,11 +53,7 @@ void cache_kji (int M, int N, int K,
                 for (int ic = 0; ic < i_len; ic += Mr) {
                     pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
                 }
-                if (k == 0) {
-                    for (int ic = i; ic < i + i_len; ic++)
-                        for (int jc = j; jc < j + j_len; jc++)
-                            MAT_C(ic, jc) = 0.0f;
-                }
+                
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
                         register_block(
@@ -81,6 +78,7 @@ void cache_kij (int M, int N, int K,
                                   float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
+    memset(C, 0, M*N * sizeof(float));
     for (int k = 0; k < K; k += Kc) {
         int k_len = std::min(Kc, K - k);
         for (int i = 0; i < M; i += Mc) {
@@ -91,11 +89,7 @@ void cache_kij (int M, int N, int K,
             for (int j = 0; j < N; j += Nc) {
                 int j_len = std::min(Nc, N - j);
                 pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
-                if (k == 0) {
-                    for (int ic = i; ic < i + i_len; ic++)
-                        for (int jc = j; jc < j + j_len; jc++)
-                            MAT_C(ic, jc) = 0.0f;
-                }
+                
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
                         register_block(
@@ -121,12 +115,11 @@ void cache_ijk (int M, int N, int K,
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int i = 0; i < M; i += Mc) {
+        memset(&MAT_C(i,0), 0, N*sizeof(float));
         int i_len = std::min(Mc, M - i);
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
-            for (int ic = i; ic < i + i_len; ic++)
-                for (int jc = j; jc < j + j_len; jc++)
-                    MAT_C(ic, jc) = 0.0f;
+            
             for (int k = 0; k < K; k += Kc) {
                 int k_len = std::min(Kc, K - k);
                 for (int ic = 0; ic < i_len; ic += Mr) {
@@ -158,6 +151,7 @@ void cache_ikj (int M, int N, int K,
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int i = 0; i < M; i += Mc) {
+        memset(&MAT_C(i, 0), 0, N*sizeof(float));
         int i_len = std::min(Mc, M - i);
         for (int k = 0; k < K; k += Kc) {
             int k_len = std::min(Kc, K - k);
@@ -167,11 +161,7 @@ void cache_ikj (int M, int N, int K,
             for (int j = 0; j < N; j += Nc) {
                 int j_len = std::min(Nc, N - j);
                 pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
-                if (k == 0) {
-                    for (int ic = i; ic < i + i_len; ic++)
-                        for (int jc = j; jc < j + j_len; jc++)
-                            MAT_C(ic, jc) = 0.0f;
-                }
+                
                 for (int ir = 0; ir < i_len; ir += Mr) {
                     for (int jr = 0; jr < j_len; jr += Nr) {
                         register_block(
@@ -198,11 +188,13 @@ void cache_jik (int M, int N, int K,
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int j = 0; j < N; j += Nc) {
         int j_len = std::min(Nc, N - j);
+        for(int i = 0; i < M; i++) {
+            memset(&MAT_C(i,j), 0, j_len*sizeof(float));
+        }
+        
         for (int i = 0; i < M; i += Mc) {
             int i_len = std::min(Mc, M - i);
-            for (int ic = i; ic < i + i_len; ic++)
-                for (int jc = j; jc < j + j_len; jc++)
-                    MAT_C(ic, jc) = 0.0f;
+            
             for (int k = 0; k < K; k += Kc) {
                 int k_len = std::min(Kc, K - k);
                 for (int ic = 0; ic < i_len; ic += Mr) {
@@ -234,7 +226,9 @@ void cache_jki (int M, int N, int K,
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int j = 0; j < N; j += Nc) {
+
         int j_len = std::min(Nc, N - j);
+        
         for (int i = 0; i < M; i++)
             memset(&MAT_C(i, j), 0, j_len * sizeof(float));
         for (int k = 0; k < K; k += Kc) {
