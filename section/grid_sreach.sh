@@ -46,6 +46,7 @@ for Mc in $(seq $START $STEP $END); do
                     ./gemm $M $N $K $Mc $Nc $Kc $Mr $Nr $op >> $LOG_FILE 2>&1
                     
                     echo "-----------------------" >> $LOG_FILE
+                    sleep 1
                 done
             done
         done
