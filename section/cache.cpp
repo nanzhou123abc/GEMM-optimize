@@ -53,7 +53,7 @@ template<int Mr>
 void pack_A(int k_len, const float *A, int lda, float *A_pack) {
     for (int k_cur = 0; k_cur < k_len; k_cur++) {
         for (int ir = 0; ir < Mr; ir++) {
-            A_pack[ir] = A[ir * lda + kc];
+            A_pack[ir] = A[ir * lda + k_cur];
         }
         A_pack += Mr;
     }
@@ -80,11 +80,18 @@ void cache_kji (int M, int N, int K,
                 float * __restrict__ A, int lda,
                 float * __restrict__ B, int ldb,
                 float * __restrict__ C, int ldc) {
-    float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
+    float *A_pack = (float *)aligned_alloc(64, M * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     memset(C, 0, M*N * sizeof(float));
     for (int k = 0; k < K; k += Kc) {
         int k_len = std::min(Kc, K - k);
+        
+        // 一次性打包当前 k 块对应的所有 A 行
+        int M_full = (M / Mr) * Mr;
+        for (int ic = 0; ic < M_full; ic += Mr) {
+            pack_A<Mr>(k_len, &MAT_A(ic, k), lda, &A_pack[ic * k_len]);
+        }
+
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
             int j_full = (j_len / Nr) * Nr;
@@ -94,15 +101,12 @@ void cache_kji (int M, int N, int K,
             for (int i = 0; i < M; i += Mc) {
                 int i_len = std::min(Mc, M - i);
                 int i_full = (i_len / Mr) * Mr;
-                for (int ic = 0; ic < i_full; ic += Mr) {
-                    pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
-                }
                 
                 for (int ir = 0; ir < i_full; ir += Mr) {
                     for (int jr = 0; jr < j_full; jr += Nr) {
                         register_block(
                             Mr, Nr, 0, k_len,
-                            &A_pack[ir * k_len],
+                            &A_pack[(i + ir) * k_len],
                             &B_pack[(jr / Nr) * k_len * Nr],
                             &MAT_C(i + ir, j + jr), ldc
                         );
