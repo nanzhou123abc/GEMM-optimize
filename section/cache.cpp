@@ -10,10 +10,48 @@
 #define MAT_A(i,j) A[ (i)*lda + (j) ]
 #define MAT_B(i,j) B[ (i)*ldb + (j) ]
 #define MAT_C(i,j) C[ (i)*ldc + (j) ]
+//bug ： 当N < Nr时会出错。此时不能pack B
+void  naive_compute(int i_len, int j_len, int K_blk,
+                const float *A_blk, int lda,
+                const float *B_blk, int ldb,
+                float *C_blk, int ldc) {
+    for (int i = 0; i < i_len; i++) {
+        for (int k = 0; k < K_blk; k++) {
+            for (int j = 0; j < j_len; j++) {
+                C_blk[i * ldc + j] += A_blk[i * lda + k] * B_blk[k * ldb + j];
+            }
+        }
+    }
+}
+
+template<int Mr, int Nr>
+void tail_block(int i0, int j0, int k0,
+                int i_len, int j_len, int k_len,
+                int i_full, int j_full,
+                float * __restrict__ A, int lda,
+                float * __restrict__ B, int ldb,
+                float * __restrict__ C, int ldc) {
+    if (i_full < i_len) {
+         naive_compute(
+            i_len - i_full, j_len, k_len,
+            &MAT_A(i0 + i_full, k0), lda,
+            &MAT_B(k0, j0), ldb,
+            &MAT_C(i0 + i_full, j0), ldc
+        );
+    }
+    if (j_full < j_len && i_full > 0) {
+         naive_compute(
+            i_full, j_len - j_full, k_len,
+            &MAT_A(i0, k0), lda,
+            &MAT_B(k0, j0 + j_full), ldb,
+            &MAT_C(i0, j0 + j_full), ldc
+        );
+    }
+}
 
 template<int Mr>
-void pack_A(int Kc, const float *A, int lda, float *A_pack) {
-    for (int kc = 0; kc < Kc; kc++) {
+void pack_A(int k_len, const float *A, int lda, float *A_pack) {
+    for (int k_cur = 0; k_cur < k_len; k_cur++) {
         for (int ir = 0; ir < Mr; ir++) {
             A_pack[ir] = A[ir * lda + kc];
         }
@@ -22,11 +60,13 @@ void pack_A(int Kc, const float *A, int lda, float *A_pack) {
 }
 
 template<int Nr>
-void pack_B(int Kc, int Nc, float *B, int ldb, float *B_pack, int k0, int j0) {
-    for (int jc = 0; jc < Nc; jc += Nr) {
-        for (int kc = 0; kc < Kc; kc++) {
+void pack_B(int k_len, int j_len, 
+            float *B, int ldb, float *B_pack, 
+            int k0, int j0) {
+    for (int j_cur = 0; j_cur < j_len; j_cur += Nr) {
+        for (int k_cur = 0; k_cur < k_len; k_cur++) {
             for (int jr = 0; jr < Nr; jr++) {
-                B_pack[jr] = MAT_B(k0 + kc, j0 + jc + jr);
+                B_pack[jr] = MAT_B(k0 + k_cur, j0 + j_cur + jr);
             }
             B_pack += Nr;
         }
@@ -36,10 +76,10 @@ void pack_B(int Kc, int Nc, float *B, int ldb, float *B_pack, int k0, int j0) {
 
 template<int Mr, int Nr>
 void cache_kji (int M, int N, int K,
-                                  int Mc, int Nc, int Kc,
-                                  float * __restrict__ A, int lda,
-                                  float * __restrict__ B, int ldb,
-                                  float * __restrict__ C, int ldc) {
+                int Mc, int Nc, int Kc,
+                float * __restrict__ A, int lda,
+                float * __restrict__ B, int ldb,
+                float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     memset(C, 0, M*N * sizeof(float));
@@ -47,15 +87,19 @@ void cache_kji (int M, int N, int K,
         int k_len = std::min(Kc, K - k);
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
-            pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
+            int j_full = (j_len / Nr) * Nr;
+            
+            pack_B<Nr>(k_len, j_full, B, ldb, B_pack, k, j);
+            
             for (int i = 0; i < M; i += Mc) {
                 int i_len = std::min(Mc, M - i);
-                for (int ic = 0; ic < i_len; ic += Mr) {
+                int i_full = (i_len / Mr) * Mr;
+                for (int ic = 0; ic < i_full; ic += Mr) {
                     pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
                 }
                 
-                for (int ir = 0; ir < i_len; ir += Mr) {
-                    for (int jr = 0; jr < j_len; jr += Nr) {
+                for (int ir = 0; ir < i_full; ir += Mr) {
+                    for (int jr = 0; jr < j_full; jr += Nr) {
                         register_block(
                             Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
@@ -64,6 +108,10 @@ void cache_kji (int M, int N, int K,
                         );
                     }
                 }
+                tail_block<Mr, Nr>(
+                    i, j, k, i_len, j_len, k_len, i_full, j_full,
+                    A, lda, B, ldb, C, ldc
+                );
             }
         }
     }
@@ -72,10 +120,10 @@ void cache_kji (int M, int N, int K,
 
 template<int Mr, int Nr>
 void cache_kij (int M, int N, int K,
-                                  int Mc, int Nc, int Kc,
-                                  float * __restrict__ A, int lda,
-                                  float * __restrict__ B, int ldb,
-                                  float * __restrict__ C, int ldc) {
+                int Mc, int Nc, int Kc,
+                float * __restrict__ A, int lda,
+                float * __restrict__ B, int ldb,
+                float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     memset(C, 0, M*N * sizeof(float));
@@ -83,15 +131,19 @@ void cache_kij (int M, int N, int K,
         int k_len = std::min(Kc, K - k);
         for (int i = 0; i < M; i += Mc) {
             int i_len = std::min(Mc, M - i);
-            for (int ic = 0; ic < i_len; ic += Mr) {
+            int i_full = (i_len / Mr) * Mr;
+            for (int ic = 0; ic < i_full; ic += Mr) {
                 pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
             }
             for (int j = 0; j < N; j += Nc) {
                 int j_len = std::min(Nc, N - j);
-                pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
+                int j_full = (j_len / Nr) * Nr;
                 
-                for (int ir = 0; ir < i_len; ir += Mr) {
-                    for (int jr = 0; jr < j_len; jr += Nr) {
+                    pack_B<Nr>(k_len, j_full, B, ldb, B_pack, k, j);
+                
+                
+                for (int ir = 0; ir < i_full; ir += Mr) {
+                    for (int jr = 0; jr < j_full; jr += Nr) {
                         register_block(
                             Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
@@ -100,6 +152,10 @@ void cache_kij (int M, int N, int K,
                         );
                     }
                 }
+                tail_block<Mr, Nr>(
+                    i, j, k, i_len, j_len, k_len, i_full, j_full,
+                    A, lda, B, ldb, C, ldc
+                );
             }
         }
     }
@@ -108,26 +164,30 @@ void cache_kij (int M, int N, int K,
 
 template<int Mr, int Nr>
 void cache_ijk (int M, int N, int K,
-                                  int Mc, int Nc, int Kc,
-                                  float * __restrict__ A, int lda,
-                                  float * __restrict__ B, int ldb,
-                                  float * __restrict__ C, int ldc) {
+                int Mc, int Nc, int Kc,
+                float * __restrict__ A, int lda,
+                float * __restrict__ B, int ldb,
+                float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int i = 0; i < M; i += Mc) {
         memset(&MAT_C(i,0), 0, N*sizeof(float));
         int i_len = std::min(Mc, M - i);
+        int i_full = (i_len / Mr) * Mr;
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
+            int j_full = (j_len / Nr) * Nr;
             
             for (int k = 0; k < K; k += Kc) {
                 int k_len = std::min(Kc, K - k);
-                for (int ic = 0; ic < i_len; ic += Mr) {
+                for (int ic = 0; ic < i_full; ic += Mr) {
                     pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
                 }
-                pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
-                for (int ir = 0; ir < i_len; ir += Mr) {
-                    for (int jr = 0; jr < j_len; jr += Nr) {
+                
+                    pack_B<Nr>(k_len, j_full, B, ldb, B_pack, k, j);
+                
+                for (int ir = 0; ir < i_full; ir += Mr) {
+                    for (int jr = 0; jr < j_full; jr += Nr) {
                         register_block(
                             Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
@@ -136,6 +196,10 @@ void cache_ijk (int M, int N, int K,
                         );
                     }
                 }
+                tail_block<Mr, Nr>(
+                    i, j, k, i_len, j_len, k_len, i_full, j_full,
+                    A, lda, B, ldb, C, ldc
+                );
             }
         }
     }
@@ -144,26 +208,30 @@ void cache_ijk (int M, int N, int K,
 
 template<int Mr, int Nr>
 void cache_ikj (int M, int N, int K,
-                                  int Mc, int Nc, int Kc,
-                                  float * __restrict__ A, int lda,
-                                  float * __restrict__ B, int ldb,
-                                  float * __restrict__ C, int ldc) {
+                int Mc, int Nc, int Kc,
+                float * __restrict__ A, int lda,
+                float * __restrict__ B, int ldb,
+                float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int i = 0; i < M; i += Mc) {
         memset(&MAT_C(i, 0), 0, N*sizeof(float));
         int i_len = std::min(Mc, M - i);
+        int i_full = (i_len / Mr) * Mr;
         for (int k = 0; k < K; k += Kc) {
             int k_len = std::min(Kc, K - k);
-            for (int ic = 0; ic < i_len; ic += Mr) {
+            for (int ic = 0; ic < i_full; ic += Mr) {
                 pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
             }
             for (int j = 0; j < N; j += Nc) {
                 int j_len = std::min(Nc, N - j);
-                pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
+                int j_full = (j_len / Nr) * Nr;
                 
-                for (int ir = 0; ir < i_len; ir += Mr) {
-                    for (int jr = 0; jr < j_len; jr += Nr) {
+                pack_B<Nr>(k_len, j_full, B, ldb, B_pack, k, j);
+                
+                
+                for (int ir = 0; ir < i_full; ir += Mr) {
+                    for (int jr = 0; jr < j_full; jr += Nr) {
                         register_block(
                             Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
@@ -172,6 +240,10 @@ void cache_ikj (int M, int N, int K,
                         );
                     }
                 }
+                tail_block<Mr, Nr>(
+                    i, j, k, i_len, j_len, k_len, i_full, j_full,
+                    A, lda, B, ldb, C, ldc
+                );
             }
         }
     }
@@ -180,29 +252,33 @@ void cache_ikj (int M, int N, int K,
 
 template<int Mr, int Nr>
 void cache_jik (int M, int N, int K,
-                                  int Mc, int Nc, int Kc,
-                                  float * __restrict__ A, int lda,
-                                  float * __restrict__ B, int ldb,
-                                  float * __restrict__ C, int ldc) {
+                int Mc, int Nc, int Kc,
+                float * __restrict__ A, int lda,
+                float * __restrict__ B, int ldb,
+                float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int j = 0; j < N; j += Nc) {
         int j_len = std::min(Nc, N - j);
+        int j_full = (j_len / Nr) * Nr;
         for(int i = 0; i < M; i++) {
             memset(&MAT_C(i,j), 0, j_len*sizeof(float));
         }
         
         for (int i = 0; i < M; i += Mc) {
             int i_len = std::min(Mc, M - i);
+            int i_full = (i_len / Mr) * Mr;
             
             for (int k = 0; k < K; k += Kc) {
                 int k_len = std::min(Kc, K - k);
-                for (int ic = 0; ic < i_len; ic += Mr) {
+                for (int ic = 0; ic < i_full; ic += Mr) {
                     pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
                 }
-                pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
-                for (int ir = 0; ir < i_len; ir += Mr) {
-                    for (int jr = 0; jr < j_len; jr += Nr) {
+                
+                pack_B<Nr>(k_len, j_full, B, ldb, B_pack, k, j);
+                
+                for (int ir = 0; ir < i_full; ir += Mr) {
+                    for (int jr = 0; jr < j_full; jr += Nr) {
                         register_block(
                             Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
@@ -211,6 +287,10 @@ void cache_jik (int M, int N, int K,
                         );
                     }
                 }
+                tail_block<Mr, Nr>(
+                    i, j, k, i_len, j_len, k_len, i_full, j_full,
+                    A, lda, B, ldb, C, ldc
+                );
             }
         }
     }
@@ -219,28 +299,32 @@ void cache_jik (int M, int N, int K,
 
 template<int Mr, int Nr>
 void cache_jki (int M, int N, int K,
-                                  int Mc, int Nc, int Kc,
-                                  float * __restrict__ A, int lda,
-                                  float * __restrict__ B, int ldb,
-                                  float * __restrict__ C, int ldc) {
+                int Mc, int Nc, int Kc,
+                float * __restrict__ A, int lda,
+                float * __restrict__ B, int ldb,
+                float * __restrict__ C, int ldc) {
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int j = 0; j < N; j += Nc) {
 
         int j_len = std::min(Nc, N - j);
+        int j_full = (j_len / Nr) * Nr;
         
         for (int i = 0; i < M; i++)
             memset(&MAT_C(i, j), 0, j_len * sizeof(float));
         for (int k = 0; k < K; k += Kc) {
             int k_len = std::min(Kc, K - k);
-            pack_B<Nr>(k_len, j_len, B, ldb, B_pack, k, j);
+            
+            pack_B<Nr>(k_len, j_full, B, ldb, B_pack, k, j);
+            
             for (int i = 0; i < M; i += Mc) {
                 int i_len = std::min(Mc, M - i);
-                for (int ic = 0; ic < i_len; ic += Mr) {
+                int i_full = (i_len / Mr) * Mr;
+                for (int ic = 0; ic < i_full; ic += Mr) {
                     pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
                 }
-                for (int ir = 0; ir < i_len; ir += Mr) {
-                    for (int jr = 0; jr < j_len; jr += Nr) {
+                for (int ir = 0; ir < i_full; ir += Mr) {
+                    for (int jr = 0; jr < j_full; jr += Nr) {
                         register_block(
                             Mr, Nr, 0, k_len,
                             &A_pack[ir * k_len],
@@ -249,6 +333,10 @@ void cache_jki (int M, int N, int K,
                         );
                     }
                 }
+                tail_block<Mr, Nr>(
+                    i, j, k, i_len, j_len, k_len, i_full, j_full,
+                    A, lda, B, ldb, C, ldc
+                );
             }
         }
     }
@@ -257,10 +345,10 @@ void cache_jki (int M, int N, int K,
 
 template<int Mr, int Nr>
 void cache_op(int op, int M, int N, int K,
-                                  int Mc, int Nc, int Kc,
-                                  float * __restrict__ A, int lda,
-                                  float * __restrict__ B, int ldb,
-                                  float * __restrict__ C, int ldc) {
+            int Mc, int Nc, int Kc,
+            float * __restrict__ A, int lda,
+            float * __restrict__ B, int ldb,
+            float * __restrict__ C, int ldc) {
     switch (op) {
         case 0: cache_kji <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;
         case 1: cache_kij <Mr, Nr>(M, N, K, Mc, Nc, Kc, A, lda, B, ldb, C, ldc); break;

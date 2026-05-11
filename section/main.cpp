@@ -13,7 +13,7 @@
 int main(int argc, char *argv[]) {
     if (argc != 9) {
         printf("用法: %s M N K Mc Nc Kc Mr Nr\n", argv[0]);
-        return 1;
+        return 0;
     }
 
     int M = atoi(argv[1]);
@@ -33,10 +33,6 @@ int main(int argc, char *argv[]) {
         (Mr == 3 && Nr == 16);
     if (!supported_kernel) {
         printf("错误: 当前 section 微内核只支持 (4,16) (5,16) (4,20) (6,16) (4,24) (3,16)\n");
-        return 1;
-    }
-    if (M % Mr != 0 || N % Nr != 0 || Mc % Mr != 0 || Nc % Nr != 0) {
-        printf("错误: M/Mc 必须是 %d 的倍数, N/Nc 必须是 %d 的倍数\n", Mr, Nr);
         return 1;
     }
 
