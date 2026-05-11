@@ -11,7 +11,7 @@
 #include "register.hpp"
 
 int main(int argc, char *argv[]) {
-    if (argc != 9) {
+    if (argc != 10) {
         printf("用法: %s M N K Mc Nc Kc Mr Nr\n", argv[0]);
         return 0;
     }
@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     int Kc = atoi(argv[6]);
     int Mr = atoi(argv[7]);
     int Nr = atoi(argv[8]);
+    int op = atoi(argv[9]);
     bool supported_kernel =
         (Mr == 4 && Nr == 16) ||
         (Mr == 5 && Nr == 16) ||
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
         naive(M, N, K, A, lda, B, ldb, C_naive, ldc);
     });
     GemmTimer::bench("opt", M, N, K, 300, [&](){
-        cache(0, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
+        cache(op, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
     });
 
     check(M, N, C_naive, ldc, C_opt, ldc);

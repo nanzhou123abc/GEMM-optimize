@@ -175,8 +175,10 @@ void cache_ijk (int M, int N, int K,
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int i = 0; i < M; i += Mc) {
-        memset(&MAT_C(i,0), 0, N*sizeof(float));
         int i_len = std::min(Mc, M - i);
+        for (int ic = 0; ic < i_len; ic++) {
+            memset(&MAT_C(i + ic, 0), 0, N * sizeof(float));
+        }
         int i_full = (i_len / Mr) * Mr;
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
@@ -219,8 +221,10 @@ void cache_ikj (int M, int N, int K,
     float *A_pack = (float *)aligned_alloc(64, Mc * Kc * sizeof(float));
     float *B_pack = (float *)aligned_alloc(64, Kc * Nc * sizeof(float));
     for (int i = 0; i < M; i += Mc) {
-        memset(&MAT_C(i, 0), 0, N*sizeof(float));
         int i_len = std::min(Mc, M - i);
+        for (int ic = 0; ic < i_len; ic++) {
+            memset(&MAT_C(i + ic, 0), 0, N * sizeof(float));
+        }
         int i_full = (i_len / Mr) * Mr;
         for (int k = 0; k < K; k += Kc) {
             int k_len = std::min(Kc, K - k);

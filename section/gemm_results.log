@@ -1,0 +1,18 @@
+GEMM Benchmark Results
+-----------------------
+Parameters: M=1024 N=1024 K=1024 Mc=32 Nc=32 Kc=32 Mr=4 Nr=16 op=0
+Timer: naive              23.904 GFLOPS  (89.8372 ms)     23.141 
+Timer: opt                84.246 GFLOPS  (25.4906 ms)     81.555 
+  最大误差: 0.000000
+-----------------------
+Parameters: M=1024 N=1024 K=1024 Mc=32 Nc=32 Kc=32 Mr=4 Nr=16 op=1
+Timer: naive              24.983 GFLOPS  (85.9589 ms)     24.185 
+Timer: opt                67.178 GFLOPS  (31.9673 ms)     65.032 
+  最大误差: 0.000000
+-----------------------
+Parameters: M=1024 N=1024 K=1024 Mc=32 Nc=32 Kc=32 Mr=4 Nr=16 op=2
+Timer: naive              24.983 GFLOPS  (85.9571 ms)     24.185 
+Timer: opt                61.289 GFLOPS  (35.0387 ms)     59.331 
+  最大误差: 0.000000
+-----------------------
+Parameters: M=1024 N=1024 K=1024 Mc=32 Nc=32 Kc=32 Mr=4 Nr=16 op=3
