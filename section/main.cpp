@@ -12,7 +12,7 @@
 
 int main(int argc, char *argv[]) {
     if (argc != 10) {
-        printf("用法: %s M N K Mc Nc Kc Mr Nr\n", argv[0]);
+        printf("用法: %s M N K Mc Nc Kc Mr Nr op\n", argv[0]);
         return 0;
     }
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     GemmTimer::bench("opt", M, N, K, 300, [&](){
         cache(op, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
     });
-
+    GemmTimer::report_times(300);
     check(M, N, C_naive, ldc, C_opt, ldc);
 
     free(A); free(B); free(C_naive); free(C_opt);
