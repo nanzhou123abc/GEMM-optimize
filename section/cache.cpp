@@ -86,14 +86,15 @@ void cache_kji (int M, int N, int K,
     memset(C, 0, M*N * sizeof(float));
     for (int k = 0; k < K; k += Kc) {
         int k_len = std::min(Kc, K - k);
-        
-        // 一次性打包当前 k 块对应的所有 A 行
+
         int M_full = (M / Mr) * Mr;
-        GemmTimer::bench_pack([&](){
+        
             for (int ic = 0; ic < M_full; ic += Mr) {
-                pack_A<Mr>(k_len, &MAT_A(ic, k), lda, &A_pack[ic * k_len]);
+                GemmTimer::bench_pack([&](){
+                    pack_A<Mr>(k_len, &MAT_A(ic, k), lda, &A_pack[ic * k_len]);
+                });
             }
-        });
+        
 
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
