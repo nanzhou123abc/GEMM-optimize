@@ -120,7 +120,7 @@ void cache_kji (int M, int N, int K,
                 });
                 tail_block<Mr, Nr>(
                     i, j, k, i_len, j_len, k_len, i_full, j_full,
-                    &MAT_A(i,k), lda, &MAT_B(k,j), ldb, C, ldc
+                    A, lda, B, ldb, C, ldc
                 );
             }
         }
