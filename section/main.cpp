@@ -57,10 +57,12 @@ int main(int argc, char *argv[]) {
     GemmTimer::bench("naive", M, N, K, 50, [&](){
         naive(M, N, K, A, lda, B, ldb, C_naive, ldc);
     });
-    GemmTimer::bench("opt", M, N, K, 300, [&](){
-        cache(op, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
-    });
-    GemmTimer::report_times(300);
+    for(int op = 0; op < 6; op++){
+        GemmTimer::bench("opt", M, N, K, 300, [&](){
+            cache(op, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
+        });
+        GemmTimer::report_times(300);
+    }
     check(M, N, C_naive, ldc, C_opt, ldc);
 
     free(A); free(B); free(C_naive); free(C_opt);
