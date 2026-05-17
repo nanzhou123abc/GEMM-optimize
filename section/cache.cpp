@@ -112,7 +112,7 @@ void cache_kji (int M, int N, int K,
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[(i + ir) * k_len],
-                                &B_pack[(jr / Nr) * k_len * Nr],
+                                &B_pack[(jr / Nr) * k_len * Nr], //第几个Nr * 高度* 宽度
                                 &MAT_C(i + ir, j + jr), ldc
                             );
                         }
