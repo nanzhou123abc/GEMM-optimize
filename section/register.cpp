@@ -99,51 +99,60 @@ void register_block_vv_4x5(
     float32x4_t a_reg;
     float32x4_t bv0, bv1, bv2, bv3, bv4;
     int kr = 0;
-    __builtin_prefetch(ap, 0, 1);
-    __builtin_prefetch(bp, 0, 0);
+
+    a_reg = vld1q_f32(ap);
+    bv0 = vld1q_f32(bp +  0);
+    bv1 = vld1q_f32(bp +  4);
+    bv2 = vld1q_f32(bp +  8);
+
+
     for(; kr + 1 < k_len; kr += 2) {
-        __builtin_prefetch(ap + 4, 0, 1);
-        __builtin_prefetch(bp + 20, 0, 0);
-        a_reg = vld1q_f32(ap);
+        bv3 = vld1q_f32(bp + 12);
+        bv4 = vld1q_f32(bp + 16);
+	cv00 = vfmaq_laneq_f32(cv00, bv0, a_reg, 0);cv10 = vfmaq_laneq_f32(cv10, bv0, a_reg, 1);cv20 = vfmaq_laneq_f32(cv20, bv0, a_reg, 2);cv30 = vfmaq_laneq_f32(cv30, bv0, a_reg, 3);
+	cv01 = vfmaq_laneq_f32(cv01, bv1, a_reg, 0);cv11 = vfmaq_laneq_f32(cv11, bv1, a_reg, 1);cv21 = vfmaq_laneq_f32(cv21, bv1, a_reg, 2);cv31 = vfmaq_laneq_f32(cv31, bv1, a_reg, 3);
+	cv02 = vfmaq_laneq_f32(cv02, bv2, a_reg, 0);cv12 = vfmaq_laneq_f32(cv12, bv2, a_reg, 1);cv22 = vfmaq_laneq_f32(cv22, bv2, a_reg, 2);cv32 = vfmaq_laneq_f32(cv32, bv2, a_reg, 3);
+
+        bp += 20;  ap += 4;
         bv0 = vld1q_f32(bp +  0);
         bv1 = vld1q_f32(bp +  4);
         bv2 = vld1q_f32(bp +  8);
+        cv03 = vfmaq_laneq_f32(cv03, bv3, a_reg, 0);cv13 = vfmaq_laneq_f32(cv13, bv3, a_reg, 1);cv23 = vfmaq_laneq_f32(cv23, bv3, a_reg, 2);cv33 = vfmaq_laneq_f32(cv33, bv3, a_reg, 3);
+	cv04 = vfmaq_laneq_f32(cv04, bv4, a_reg, 0);cv14 = vfmaq_laneq_f32(cv14, bv4, a_reg, 1);cv24 = vfmaq_laneq_f32(cv24, bv4, a_reg, 2);cv34 = vfmaq_laneq_f32(cv34, bv4, a_reg, 3);
+	
+	a_reg = vld1q_f32(ap);
+
         bv3 = vld1q_f32(bp + 12);
         bv4 = vld1q_f32(bp + 16);
-        cv00 = vfmaq_laneq_f32(cv00, bv0, a_reg, 0);  cv01 = vfmaq_laneq_f32(cv01, bv1, a_reg, 0);  cv02 = vfmaq_laneq_f32(cv02, bv2, a_reg, 0);  cv03 = vfmaq_laneq_f32(cv03, bv3, a_reg, 0);  cv04 = vfmaq_laneq_f32(cv04, bv4, a_reg, 0);
-        cv10 = vfmaq_laneq_f32(cv10, bv0, a_reg, 1);  cv11 = vfmaq_laneq_f32(cv11, bv1, a_reg, 1);  cv12 = vfmaq_laneq_f32(cv12, bv2, a_reg, 1);  cv13 = vfmaq_laneq_f32(cv13, bv3, a_reg, 1);  cv14 = vfmaq_laneq_f32(cv14, bv4, a_reg, 1);
-        cv20 = vfmaq_laneq_f32(cv20, bv0, a_reg, 2);  cv21 = vfmaq_laneq_f32(cv21, bv1, a_reg, 2);  cv22 = vfmaq_laneq_f32(cv22, bv2, a_reg, 2);  cv23 = vfmaq_laneq_f32(cv23, bv3, a_reg, 2);  cv24 = vfmaq_laneq_f32(cv24, bv4, a_reg, 2);
-        cv30 = vfmaq_laneq_f32(cv30, bv0, a_reg, 3);  cv31 = vfmaq_laneq_f32(cv31, bv1, a_reg, 3);  cv32 = vfmaq_laneq_f32(cv32, bv2, a_reg, 3);  cv33 = vfmaq_laneq_f32(cv33, bv3, a_reg, 3);  cv34 = vfmaq_laneq_f32(cv34, bv4, a_reg, 3);
+	cv00 = vfmaq_laneq_f32(cv00, bv0, a_reg, 0);cv10 = vfmaq_laneq_f32(cv10, bv0, a_reg, 1);cv20 = vfmaq_laneq_f32(cv20, bv0, a_reg, 2);cv30 = vfmaq_laneq_f32(cv30, bv0, a_reg, 3);
+	cv01 = vfmaq_laneq_f32(cv01, bv1, a_reg, 0);cv11 = vfmaq_laneq_f32(cv11, bv1, a_reg, 1);cv21 = vfmaq_laneq_f32(cv21, bv1, a_reg, 2);cv31 = vfmaq_laneq_f32(cv31, bv1, a_reg, 3);
+	cv02 = vfmaq_laneq_f32(cv02, bv2, a_reg, 0);cv12 = vfmaq_laneq_f32(cv12, bv2, a_reg, 1);cv22 = vfmaq_laneq_f32(cv22, bv2, a_reg, 2);cv32 = vfmaq_laneq_f32(cv32, bv2, a_reg, 3);
 
         bp += 20;  ap += 4;
-        __builtin_prefetch(ap + 4, 0, 1);
-        __builtin_prefetch(bp + 20, 0, 0);
-        a_reg = vld1q_f32(ap);
         bv0 = vld1q_f32(bp +  0);
         bv1 = vld1q_f32(bp +  4);
         bv2 = vld1q_f32(bp +  8);
-        bv3 = vld1q_f32(bp + 12);
-        bv4 = vld1q_f32(bp + 16);
-        cv00 = vfmaq_laneq_f32(cv00, bv0, a_reg, 0);  cv01 = vfmaq_laneq_f32(cv01, bv1, a_reg, 0);  cv02 = vfmaq_laneq_f32(cv02, bv2, a_reg, 0);  cv03 = vfmaq_laneq_f32(cv03, bv3, a_reg, 0);  cv04 = vfmaq_laneq_f32(cv04, bv4, a_reg, 0);
-        cv10 = vfmaq_laneq_f32(cv10, bv0, a_reg, 1);  cv11 = vfmaq_laneq_f32(cv11, bv1, a_reg, 1);  cv12 = vfmaq_laneq_f32(cv12, bv2, a_reg, 1);  cv13 = vfmaq_laneq_f32(cv13, bv3, a_reg, 1);  cv14 = vfmaq_laneq_f32(cv14, bv4, a_reg, 1);
-        cv20 = vfmaq_laneq_f32(cv20, bv0, a_reg, 2);  cv21 = vfmaq_laneq_f32(cv21, bv1, a_reg, 2);  cv22 = vfmaq_laneq_f32(cv22, bv2, a_reg, 2);  cv23 = vfmaq_laneq_f32(cv23, bv3, a_reg, 2);  cv24 = vfmaq_laneq_f32(cv24, bv4, a_reg, 2);
-        cv30 = vfmaq_laneq_f32(cv30, bv0, a_reg, 3);  cv31 = vfmaq_laneq_f32(cv31, bv1, a_reg, 3);  cv32 = vfmaq_laneq_f32(cv32, bv2, a_reg, 3);  cv33 = vfmaq_laneq_f32(cv33, bv3, a_reg, 3);  cv34 = vfmaq_laneq_f32(cv34, bv4, a_reg, 3);
+        cv03 = vfmaq_laneq_f32(cv03, bv3, a_reg, 0);cv13 = vfmaq_laneq_f32(cv13, bv3, a_reg, 1);cv23 = vfmaq_laneq_f32(cv23, bv3, a_reg, 2);cv33 = vfmaq_laneq_f32(cv33, bv3, a_reg, 3);
+	cv04 = vfmaq_laneq_f32(cv04, bv4, a_reg, 0);cv14 = vfmaq_laneq_f32(cv14, bv4, a_reg, 1);cv24 = vfmaq_laneq_f32(cv24, bv4, a_reg, 2);cv34 = vfmaq_laneq_f32(cv34, bv4, a_reg, 3);
 
-        bp += 20;  ap += 4;
+        a_reg = vld1q_f32(ap);
     }
+
     for (; kr < k_len; kr++) {
-        a_reg = vld1q_f32(ap);
+        bv3 = vld1q_f32(bp + 12);
+        bv4 = vld1q_f32(bp + 16);
+	cv00 = vfmaq_laneq_f32(cv00, bv0, a_reg, 0);cv10 = vfmaq_laneq_f32(cv10, bv0, a_reg, 1);cv20 = vfmaq_laneq_f32(cv20, bv0, a_reg, 2);cv30 = vfmaq_laneq_f32(cv30, bv0, a_reg, 3);
+	cv01 = vfmaq_laneq_f32(cv01, bv1, a_reg, 0);cv11 = vfmaq_laneq_f32(cv11, bv1, a_reg, 1);cv21 = vfmaq_laneq_f32(cv21, bv1, a_reg, 2);cv31 = vfmaq_laneq_f32(cv31, bv1, a_reg, 3);
+	cv02 = vfmaq_laneq_f32(cv02, bv2, a_reg, 0);cv12 = vfmaq_laneq_f32(cv12, bv2, a_reg, 1);cv22 = vfmaq_laneq_f32(cv22, bv2, a_reg, 2);cv32 = vfmaq_laneq_f32(cv32, bv2, a_reg, 3);
+       
+        bp += 20;  ap += 4;
         bv0 = vld1q_f32(bp +  0);
         bv1 = vld1q_f32(bp +  4);
         bv2 = vld1q_f32(bp +  8);
-        bv3 = vld1q_f32(bp + 12);
-        bv4 = vld1q_f32(bp + 16);
-        cv00 = vfmaq_laneq_f32(cv00, bv0, a_reg, 0);  cv01 = vfmaq_laneq_f32(cv01, bv1, a_reg, 0);  cv02 = vfmaq_laneq_f32(cv02, bv2, a_reg, 0);  cv03 = vfmaq_laneq_f32(cv03, bv3, a_reg, 0);  cv04 = vfmaq_laneq_f32(cv04, bv4, a_reg, 0);
-        cv10 = vfmaq_laneq_f32(cv10, bv0, a_reg, 1);  cv11 = vfmaq_laneq_f32(cv11, bv1, a_reg, 1);  cv12 = vfmaq_laneq_f32(cv12, bv2, a_reg, 1);  cv13 = vfmaq_laneq_f32(cv13, bv3, a_reg, 1);  cv14 = vfmaq_laneq_f32(cv14, bv4, a_reg, 1);
-        cv20 = vfmaq_laneq_f32(cv20, bv0, a_reg, 2);  cv21 = vfmaq_laneq_f32(cv21, bv1, a_reg, 2);  cv22 = vfmaq_laneq_f32(cv22, bv2, a_reg, 2);  cv23 = vfmaq_laneq_f32(cv23, bv3, a_reg, 2);  cv24 = vfmaq_laneq_f32(cv24, bv4, a_reg, 2);
-        cv30 = vfmaq_laneq_f32(cv30, bv0, a_reg, 3);  cv31 = vfmaq_laneq_f32(cv31, bv1, a_reg, 3);  cv32 = vfmaq_laneq_f32(cv32, bv2, a_reg, 3);  cv33 = vfmaq_laneq_f32(cv33, bv3, a_reg, 3);  cv34 = vfmaq_laneq_f32(cv34, bv4, a_reg, 3);
+	cv03 = vfmaq_laneq_f32(cv03, bv3, a_reg, 0);cv13 = vfmaq_laneq_f32(cv13, bv3, a_reg, 1);cv23 = vfmaq_laneq_f32(cv23, bv3, a_reg, 2);cv33 = vfmaq_laneq_f32(cv33, bv3, a_reg, 3);
+	cv04 = vfmaq_laneq_f32(cv04, bv4, a_reg, 0);cv14 = vfmaq_laneq_f32(cv14, bv4, a_reg, 1);cv24 = vfmaq_laneq_f32(cv24, bv4, a_reg, 2);cv34 = vfmaq_laneq_f32(cv34, bv4, a_reg, 3);
 
-        bp += 20;  ap += 4;
+        a_reg = vld1q_f32(ap);
     }
 
     vst1q_f32(&MAT_C(0,  0), cv00);  vst1q_f32(&MAT_C(0,  4), cv01);  vst1q_f32(&MAT_C(0,  8), cv02);  vst1q_f32(&MAT_C(0, 12), cv03);  vst1q_f32(&MAT_C(0, 16), cv04);
