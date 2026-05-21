@@ -104,6 +104,7 @@ void cache_kji (int M, int N, int K,
                 GemmTimer::bench_kernel([&](){
                     for (int ir = 0; ir < i_full; ir += Mr) {
                         for (int jr = 0; jr < j_full; jr += Nr) {
+                            
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[(i + ir) * k_len],
@@ -147,18 +148,20 @@ void cache_kij (int M, int N, int K,
                 
                 GemmTimer::bench_pack([&](){pack_B<Nr>(k_len, j_full, &MAT_B(k, j), ldb, B_pack);});
                 
-                for (int ir = 0; ir < i_full; ir += Mr) {
-                    for (int jr = 0; jr < j_full; jr += Nr) {
-                        GemmTimer::bench_kernel([&](){
+                GemmTimer::bench_kernel([&](){
+                    for (int ir = 0; ir < i_full; ir += Mr) {
+                        for (int jr = 0; jr < j_full; jr += Nr) {
+                        
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[ir * k_len],
                                 &B_pack[(jr / Nr) * k_len * Nr],
                                 &MAT_C(i + ir, j + jr), ldc
                             );
-                        });
+                            
+                        }
                     }
-                }
+                });
                 tail_block<Mr, Nr>(
                     i, j, k, i_len, j_len, k_len, i_full, j_full,
                     A, lda, B, ldb, C, ldc
@@ -195,19 +198,20 @@ void cache_ijk (int M, int N, int K,
                     GemmTimer::bench_pack([&](){pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);});
                 }
                 GemmTimer::bench_pack([&](){pack_B<Nr>(k_len, j_full, &MAT_B(k, j), ldb, B_pack);});
-                
-                for (int ir = 0; ir < i_full; ir += Mr) {
-                    for (int jr = 0; jr < j_full; jr += Nr) {
-                        GemmTimer::bench_kernel([&](){
+                GemmTimer::bench_kernel([&](){
+                    for (int ir = 0; ir < i_full; ir += Mr) {
+                        for (int jr = 0; jr < j_full; jr += Nr) {
+                        
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[ir * k_len],
                                 &B_pack[(jr / Nr) * k_len * Nr],
                                 &MAT_C(i + ir, j + jr), ldc
                             );
-                        });
+                        
+                        }
                     }
-                }
+                });
                 tail_block<Mr, Nr>(
                     i, j, k, i_len, j_len, k_len, i_full, j_full,
                     A, lda, B, ldb, C, ldc
@@ -247,20 +251,21 @@ void cache_ikj (int M, int N, int K,
                 
                 GemmTimer::bench_pack([&](){pack_B<Nr>(k_len, j_full, &MAT_B(k, j), ldb, B_pack);});
                 
-                
-                for (int ir = 0; ir < i_full; ir += Mr) {
-                    for (int jr = 0; jr < j_full; jr += Nr) {
-                        GemmTimer::bench_kernel([&](){
+                GemmTimer::bench_kernel([&](){
+                    for (int ir = 0; ir < i_full; ir += Mr) {
+                        for (int jr = 0; jr < j_full; jr += Nr) {
+                        
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[ir * k_len],
                                 &B_pack[(jr / Nr) * k_len * Nr],
                                 &MAT_C(i + ir, j + jr), ldc
                             );
-                        });
                         
+                        
+                        }
                     }
-                }
+                });
                 tail_block<Mr, Nr>(
                     i, j, k, i_len, j_len, k_len, i_full, j_full,
                     A, lda, B, ldb, C, ldc
@@ -294,21 +299,28 @@ void cache_jik (int M, int N, int K,
             for (int k = 0; k < K; k += Kc) {
                 int k_len = std::min(Kc, K - k);
                 for (int ic = 0; ic < i_full; ic += Mr) {
-                    GemmTimer::bench_pack([&](){pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);});
+                    GemmTimer::bench_pack([&](){
+                        pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
+                    });
                 }
-                GemmTimer::bench_pack([&](){pack_B<Nr>(k_len, j_full, &MAT_B(k, j), ldb, B_pack);});
-                for (int ir = 0; ir < i_full; ir += Mr) {
-                    for (int jr = 0; jr < j_full; jr += Nr) {
-                        GemmTimer::bench_kernel([&](){
+                GemmTimer::bench_pack([&](){
+                    pack_B<Nr>(k_len, j_full, &MAT_B(k, j), ldb, B_pack);
+                });
+
+                GemmTimer::bench_kernel([&](){
+                    for (int ir = 0; ir < i_full; ir += Mr) {
+                        for (int jr = 0; jr < j_full; jr += Nr) {
+                        
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[ir * k_len],
                                 &B_pack[(jr / Nr) * k_len * Nr],
                                 &MAT_C(i + ir, j + jr), ldc
                             );
-                        });
+                        
+                        }
                     }
-                }
+                });
                 tail_block<Mr, Nr>(
                     i, j, k, i_len, j_len, k_len, i_full, j_full,
                     A, lda, B, ldb, C, ldc
@@ -345,18 +357,20 @@ void cache_jki (int M, int N, int K,
                 for (int ic = 0; ic < i_full; ic += Mr) {
                     GemmTimer::bench_pack([&](){pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);});
                 }
-                for (int ir = 0; ir < i_full; ir += Mr) {
-                    for (int jr = 0; jr < j_full; jr += Nr) {
-                        GemmTimer::bench_kernel([&](){
+                GemmTimer::bench_kernel([&](){
+                    for (int ir = 0; ir < i_full; ir += Mr) {
+                        for (int jr = 0; jr < j_full; jr += Nr) {
+                            
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[ir * k_len],
                                 &B_pack[(jr / Nr) * k_len * Nr],
                                 &MAT_C(i + ir, j + jr), ldc
                             );
-                        });
+                        
+                        }
                     }
-                }
+                });
                 tail_block<Mr, Nr>(
                     i, j, k, i_len, j_len, k_len, i_full, j_full,
                     A, lda, B, ldb, C, ldc
