@@ -50,6 +50,12 @@ void register_block_vv_4x4(
     
     int kr = 0;
     for (; kr + 1 < k_len; kr += 2) {
+        // prefetch: A 每行下一条 cache line(64B) + B_pack 下一段(256B)
+        __builtin_prefetch(ap0 + 16, 0, 3);
+        __builtin_prefetch(ap1 + 16, 0, 3);
+        __builtin_prefetch(ap2 + 16, 0, 3);
+        __builtin_prefetch(ap3 + 16, 0, 3);
+        __builtin_prefetch(bp  + 64, 0, 3);
         //k1
         av2 = vld1q_dup_f32(ap2); ap2++;
         av3 = vld1q_dup_f32(ap3); ap3++;
@@ -182,6 +188,13 @@ void register_block_vv_5x4(
 
     int kr = 0;
     for (; kr + 1 < k_len; kr += 2) {
+        // prefetch: A 5 行下一条 cache line + B_pack 下一段
+        __builtin_prefetch(ap0 + 16, 0, 3);
+        __builtin_prefetch(ap1 + 16, 0, 3);
+        __builtin_prefetch(ap2 + 16, 0, 3);
+        __builtin_prefetch(ap3 + 16, 0, 3);
+        __builtin_prefetch(ap4 + 16, 0, 3);
+        __builtin_prefetch(bp  + 64, 0, 3);
         // k1
         av2 = vld1q_dup_f32(ap2); ap2++;
         av3 = vld1q_dup_f32(ap3); ap3++;
@@ -336,6 +349,14 @@ void register_block_vv_6x4(
 
     int kr = 0;
     for (; kr + 1 < k_len; kr += 2) {
+        // prefetch: A 6 行下一条 cache line + B_pack 下一段
+        __builtin_prefetch(ap0 + 16, 0, 3);
+        __builtin_prefetch(ap1 + 16, 0, 3);
+        __builtin_prefetch(ap2 + 16, 0, 3);
+        __builtin_prefetch(ap3 + 16, 0, 3);
+        __builtin_prefetch(ap4 + 16, 0, 3);
+        __builtin_prefetch(ap5 + 16, 0, 3);
+        __builtin_prefetch(bp  + 64, 0, 3);
         // k1
         av2 = vld1q_dup_f32(ap2); ap2++;
         av3 = vld1q_dup_f32(ap3); ap3++;
