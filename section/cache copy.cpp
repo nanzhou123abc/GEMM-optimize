@@ -87,12 +87,12 @@ void cache_kji (int M, int N, int K,
         int k_len = std::min(Kc, K - k);
 
         int M_full = (M / Mr) * Mr;
-            GemmTimer::bench_pack([&](){
-                for (int ic = 0; ic < M_full; ic += Mr) {
+        
+            for (int ic = 0; ic < M_full; ic += Mr) {
+                GemmTimer::bench_pack([&](){
                     pack_A<Mr>(k_len, &MAT_A(ic, k), lda, &A_pack[ic * k_len]);
-                    
-                }
-            });
+                });
+            }
         for (int j = 0; j < N; j += Nc) {
             int j_len = std::min(Nc, N - j);
             int j_full = (j_len / Nr) * Nr;
@@ -104,6 +104,7 @@ void cache_kji (int M, int N, int K,
                 GemmTimer::bench_kernel([&](){
                     for (int ir = 0; ir < i_full; ir += Mr) {
                         for (int jr = 0; jr < j_full; jr += Nr) {
+                            
                             register_block(
                                 Mr, Nr, 0, k_len,
                                 &A_pack[(i + ir) * k_len],
@@ -138,11 +139,9 @@ void cache_kij (int M, int N, int K,
         for (int i = 0; i < M; i += Mc) {
             int i_len = std::min(Mc, M - i);
             int i_full = (i_len / Mr) * Mr;
-            GemmTimer::bench_pack([&](){
-                for (int ic = 0; ic < i_full; ic += Mr) {
-                    pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
-                }
-            });
+            for (int ic = 0; ic < i_full; ic += Mr) {
+                GemmTimer::bench_pack([&](){pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);});
+            }
             for (int j = 0; j < N; j += Nc) {
                 int j_len = std::min(Nc, N - j);
                 int j_full = (j_len / Nr) * Nr;
@@ -195,11 +194,9 @@ void cache_ijk (int M, int N, int K,
             
             for (int k = 0; k < K; k += Kc) {
                 int k_len = std::min(Kc, K - k);
-                GemmTimer::bench_pack([&](){
-                    for (int ic = 0; ic < i_full; ic += Mr) {
-                        pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
-                    }
-                });
+                for (int ic = 0; ic < i_full; ic += Mr) {
+                    GemmTimer::bench_pack([&](){pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);});
+                }
                 GemmTimer::bench_pack([&](){pack_B<Nr>(k_len, j_full, &MAT_B(k, j), ldb, B_pack);});
                 GemmTimer::bench_kernel([&](){
                     for (int ir = 0; ir < i_full; ir += Mr) {
@@ -243,13 +240,11 @@ void cache_ikj (int M, int N, int K,
         int i_full = (i_len / Mr) * Mr;
         for (int k = 0; k < K; k += Kc) {
             int k_len = std::min(Kc, K - k);
-
-            GemmTimer::bench_pack([&](){
-                for (int ic = 0; ic < i_full; ic += Mr) {
-                    pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
-                }
-            });
-
+            
+            for (int ic = 0; ic < i_full; ic += Mr) {
+                GemmTimer::bench_pack([&](){pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);});
+            }
+            
             for (int j = 0; j < N; j += Nc) {
                 int j_len = std::min(Nc, N - j);
                 int j_full = (j_len / Nr) * Nr;
@@ -303,11 +298,11 @@ void cache_jik (int M, int N, int K,
             
             for (int k = 0; k < K; k += Kc) {
                 int k_len = std::min(Kc, K - k);
-                GemmTimer::bench_pack([&](){
-                    for (int ic = 0; ic < i_full; ic += Mr) {
-                            pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
-                    }
-                });
+                for (int ic = 0; ic < i_full; ic += Mr) {
+                    GemmTimer::bench_pack([&](){
+                        pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
+                    });
+                }
                 GemmTimer::bench_pack([&](){
                     pack_B<Nr>(k_len, j_full, &MAT_B(k, j), ldb, B_pack);
                 });
@@ -359,11 +354,9 @@ void cache_jki (int M, int N, int K,
             for (int i = 0; i < M; i += Mc) {
                 int i_len = std::min(Mc, M - i);
                 int i_full = (i_len / Mr) * Mr;
-                GemmTimer::bench_pack([&](){
-                    for (int ic = 0; ic < i_full; ic += Mr) {
-                        pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);
-                    }
-                });
+                for (int ic = 0; ic < i_full; ic += Mr) {
+                    GemmTimer::bench_pack([&](){pack_A<Mr>(k_len, &MAT_A(i + ic, k), lda, &A_pack[ic * k_len]);});
+                }
                 GemmTimer::bench_kernel([&](){
                     for (int ir = 0; ir < i_full; ir += Mr) {
                         for (int jr = 0; jr < j_full; jr += Nr) {
