@@ -62,8 +62,9 @@ int main(int argc, char *argv[]) {
             cache(op, M, N, K, Mc, Nc, Kc, Mr, Nr, A, lda, B, ldb, C_opt, ldc);
         });
         GemmTimer::report_times(300);
+        check(M, N, C_naive, ldc, C_opt, ldc);
     }
-    check(M, N, C_naive, ldc, C_opt, ldc);
+    
 
     free(A); free(B); free(C_naive); free(C_opt);
     return 0;
